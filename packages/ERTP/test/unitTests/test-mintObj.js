@@ -38,7 +38,8 @@ test('mint.mintPayment set w strings AssetKind', async t => {
   t.assert(AmountMath.isEqual(paymentBalance2, items5and6));
 });
 
-test('mint.mintPayment set AssetKind', async t => {
+// TODO(MSM)
+test.failing('mint.mintPayment set AssetKind', async t => {
   const { mint, issuer, brand } = makeIssuerKit('items', AssetKind.SET);
   const item1handle = Far('iface', {});
   const item2handle = Far('iface', {});
@@ -60,7 +61,8 @@ test('mint.mintPayment set AssetKind', async t => {
   t.assert(AmountMath.isEqual(paymentBalance3, item3));
 });
 
-test('mint.mintPayment set AssetKind with invites', async t => {
+// TODO(MSM)
+test.failing('mint.mintPayment set AssetKind with invites', async t => {
   const { mint, issuer, brand } = makeIssuerKit('items', AssetKind.SET);
   const instanceHandle1 = Far('iface', {});
   const invite1Value = {

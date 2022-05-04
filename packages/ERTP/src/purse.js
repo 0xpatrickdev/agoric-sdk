@@ -1,15 +1,33 @@
-import { makeNotifierKit } from '@agoric/notifier';
-import { defineKindMulti, makeScalarBigSetStore } from '@agoric/vat-data';
+import {
+  defineDurableKindMulti,
+  makeScalarBigSetStore,
+  makeKindHandle,
+} from '@agoric/vat-data';
+import { provide } from '@agoric/store';
 import { AmountMath } from './amountMath.js';
+import { provideFakeNotifierKit } from './fake-durable-notifier.js';
 
 const { details: X } = assert;
 
-export const makePurseMaker = (allegedName, assetKind, brand, purseMethods) => {
-  const updatePurseBalance = (state, newPurseBalance) => {
-    state.currentBalance = newPurseBalance;
-    state.balanceUpdater.updateState(state.currentBalance);
-  };
+const updatePurseBalance = (state, newPurseBalance) => {
+  state.currentBalance = newPurseBalance;
+  debugger;
+  // TODO(MSM): When I uncomment the following line,
+  // we get error "updatePurseBalance: no function"
+  // console.log('state: ', typeof state, Reflect.keys(state));
+  console.log('balanceUpdater', typeof state.balanceUpdater);
+  console.log('currentBalance', typeof state.currentBalance);
+  state.balanceUpdater.updateState(state.currentBalance);
+};
 
+export const defineDurablePurse = (
+  issuerBaggage,
+  allegedName,
+  assetKind,
+  brand,
+  purseMethods,
+) => {
+  const makeFakeNotifierKit = provideFakeNotifierKit(issuerBaggage);
   // - This kind is a pair of purse and depositFacet that have a 1:1
   //   correspondence.
   // - They are virtualized together to share a single state record.
@@ -17,17 +35,22 @@ export const makePurseMaker = (allegedName, assetKind, brand, purseMethods) => {
   //   that created depositFacet as needed. But this approach ensures a constant
   //   identity for the facet and exercises the multi-faceted object style.
   const { depositInternal, withdrawInternal } = purseMethods;
-  const makePurseKit = defineKindMulti(
-    allegedName,
+  const purseKitKindHandle = provide(issuerBaggage, 'purseKitKindHandle', () =>
+    makeKindHandle(allegedName),
+  );
+  const makePurseKit = defineDurableKindMulti(
+    purseKitKindHandle,
     () => {
       const currentBalance = AmountMath.makeEmpty(brand, assetKind);
 
       /** @type {NotifierRecord<Amount>} */
       const { notifier: balanceNotifier, updater: balanceUpdater } =
-        makeNotifierKit(currentBalance);
+        makeFakeNotifierKit(currentBalance);
 
       /** @type {SetStore<Payment>} */
-      const recoverySet = makeScalarBigSetStore('recovery set');
+      const recoverySet = makeScalarBigSetStore('recovery set', {
+        durable: true,
+      });
 
       return {
         currentBalance,
@@ -85,4 +108,4 @@ export const makePurseMaker = (allegedName, assetKind, brand, purseMethods) => {
   );
   return () => makePurseKit().purse;
 };
-harden(makePurseMaker);
+harden(defineDurablePurse);
