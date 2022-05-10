@@ -8,7 +8,7 @@ export const provideFakeNotifierKit = baggage => {
   );
   const makeFakeNotifierKit = defineDurableKindMulti(
     notifierKitKindHandle,
-    () => ({}),
+    _initialState => ({}),
     {
       notifier: {
         // [Symbol.asyncIterator]: () => ({}),

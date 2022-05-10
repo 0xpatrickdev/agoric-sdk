@@ -5,7 +5,7 @@ import {
 } from '@agoric/vat-data';
 import { provide } from '@agoric/store';
 import { AmountMath } from './amountMath.js';
-import { provideFakeNotifierKit } from './fake-durable-notifier.js';
+import { provideFakeNotifierKit } from './fakeDurableNotifier.js';
 
 const { details: X } = assert;
 
