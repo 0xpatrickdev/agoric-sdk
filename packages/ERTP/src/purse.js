@@ -20,11 +20,12 @@ const updatePurseBalance = (state, newPurseBalance) => {
   state.balanceUpdater.updateState(state.currentBalance);
 };
 
+//  `getBrand` must not be called before the issuerKit is created
 export const defineDurablePurse = (
   issuerBaggage,
   allegedName,
   assetKind,
-  brand,
+  getBrand,
   purseMethods,
 ) => {
   const makeFakeNotifierKit = provideFakeNotifierKit(issuerBaggage);
@@ -41,7 +42,7 @@ export const defineDurablePurse = (
   const makePurseKit = defineDurableKindMulti(
     purseKitKindHandle,
     () => {
-      const currentBalance = AmountMath.makeEmpty(brand, assetKind);
+      const currentBalance = AmountMath.makeEmpty(getBrand(), assetKind);
 
       /** @type {NotifierRecord<Amount>} */
       const { notifier: balanceNotifier, updater: balanceUpdater } =
@@ -81,12 +82,13 @@ export const defineDurablePurse = (
           ),
         getCurrentAmount: ({ state }) => state.currentBalance,
         getCurrentAmountNotifier: ({ state }) => state.balanceNotifier,
-        getAllegedBrand: () => brand,
+        getAllegedBrand: _context => getBrand(),
         // eslint-disable-next-line no-use-before-define
         getDepositFacet: ({ facets }) => facets.depositFacet,
 
         getRecoverySet: ({ state }) => state.recoverySet.snapshot(),
         recoverAll: ({ state, facets }) => {
+          const brand = getBrand();
           let amount = AmountMath.makeEmpty(brand, assetKind);
           for (const payment of state.recoverySet.keys()) {
             // This does cause deletions from the set while iterating,

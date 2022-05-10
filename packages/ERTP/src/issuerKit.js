@@ -6,7 +6,6 @@ import { makeScalarBigMapStore } from '@agoric/vat-data';
 
 import { AssetKind, assertAssetKind } from './amountMath.js';
 import { coerceDisplayInfo } from './displayInfo.js';
-import { makeDurableBrand } from './brand.js';
 import { makeDurablePaymentLedger } from './paymentLedger.js';
 
 import './types.js';
@@ -60,29 +59,10 @@ const makeDurableIssuerKit = (
     assert.typeof(optShutdownWithFailure, 'function');
   }
 
-  /**
-   * We can define this function to use the in-scope `issuer` variable
-   * before that variable is initialized, as long as the variable is
-   * initialized before the function is called.
-   *
-   * @param {Issuer} allegedIssuer
-   * @returns {boolean}
-   */
-  // eslint-disable-next-line no-use-before-define
-  const isMyIssuerNow = allegedIssuer => allegedIssuer === issuer;
-
-  const brand = makeDurableBrand(
-    issuerBaggage,
-    allegedName,
-    isMyIssuerNow,
-    cleanDisplayInfo,
-  );
-
   // Attenuate the powerful authority to mint and change balances
-  const { issuer, mint } = makeDurablePaymentLedger(
+  const { issuer, mint, brand } = makeDurablePaymentLedger(
     issuerBaggage,
     allegedName,
-    brand,
     assetKind,
     cleanDisplayInfo,
     optShutdownWithFailure,

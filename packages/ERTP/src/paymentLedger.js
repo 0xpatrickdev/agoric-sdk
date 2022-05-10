@@ -23,24 +23,34 @@ import '@agoric/store/exported.js';
  * @template {AssetKind} [K=AssetKind]
  * @param {MapStore<string,any>} issuerBaggage
  * @param {string} allegedName
- * @param {Brand} brand
  * @param {AssetKind} assetKind
  * @param {DisplayInfo} displayInfo
  * @param {ShutdownWithFailure=} optShutdownWithFailure
- * @returns {{ issuer: Issuer<K>, mint: Mint<K> }}
+ * @returns {{ issuer: Issuer<K>, mint: Mint<K>, brand: Brand<K> }}
  */
 export const makeDurablePaymentLedger = (
   issuerBaggage,
   allegedName,
-  brand,
   assetKind,
   displayInfo,
   optShutdownWithFailure = undefined,
 ) => {
+  /**
+   * Although we implicitly initialize the `let` with `undefined`, all uses
+   * should only happen after it has been initialized to a Brand.
+   *
+   * @type {Brand}
+   */
+  // @ts-expect-error
+  // eslint-disable-next-line no-undef-init
+  let brand = undefined;
+
+  const getBrand = () => brand;
+
   const makePayment = defineDurablePaymentKind(
     issuerBaggage,
     allegedName,
-    brand,
+    getBrand,
   );
 
   /** @type {ShutdownWithFailure} */
@@ -132,7 +142,7 @@ export const makeDurablePaymentLedger = (
   const isEqual = (left, right) => AmountMath.isEqual(left, right, brand);
 
   /** @type {Amount} */
-  const emptyAmount = AmountMath.makeEmpty(brand, assetKind);
+  let emptyAmount;
 
   /**
    * Methods like deposit() have an optional second parameter
@@ -415,7 +425,7 @@ export const makeDurablePaymentLedger = (
     issuerBaggage,
     allegedName,
     assetKind,
-    brand,
+    getBrand,
     harden({
       depositInternal,
       withdrawInternal,
@@ -432,26 +442,45 @@ export const makeDurablePaymentLedger = (
     'issuerKitKindHandle',
     () => makeKindHandle(allegedName),
   );
-  const makeTheKit = defineDurableKindMulti(issuerKitKindHandle, () => ({}), {
-    issuer: {
-      isLive: dropContext(isLive),
-      getAmountOf: dropContext(getAmountOf),
-      burn: dropContext(burn),
-      claim: dropContext(claim),
-      combine: dropContext(combine),
-      split: dropContext(split),
-      splitMany: dropContext(splitMany),
-      getBrand: _context => brand,
-      getAllegedName: _context => allegedName,
-      getAssetKind: _context => assetKind,
-      getDisplayInfo: _context => displayInfo,
-      makeEmptyPurse: dropContext(makeEmptyPurse),
+  const makeTheKit = defineDurableKindMulti(
+    issuerKitKindHandle,
+    () => ({}),
+    {
+      issuer: {
+        isLive: dropContext(isLive),
+        getAmountOf: dropContext(getAmountOf),
+        burn: dropContext(burn),
+        claim: dropContext(claim),
+        combine: dropContext(combine),
+        split: dropContext(split),
+        splitMany: dropContext(splitMany),
+        getBrand: _context => brand,
+        getAllegedName: _context => allegedName,
+        getAssetKind: _context => assetKind,
+        getDisplayInfo: _context => displayInfo,
+        makeEmptyPurse: dropContext(makeEmptyPurse),
+      },
+      mint: {
+        getIssuer: ({ facets: { issuer } }) => issuer,
+        mintPayment: dropContext(mintPayment),
+      },
+      brand: {
+        isMyIssuer: ({ facets: { issuer } }, allegedIssuerP) =>
+          E.when(allegedIssuerP, allegedIssuer => allegedIssuer === issuer),
+
+        getAllegedName: _context => allegedName,
+
+        // Give information to UI on how to display the amount.
+        getDisplayInfo: _context => displayInfo,
+      },
     },
-    mint: {
-      getIssuer: ({ facets: { issuer } }) => issuer,
-      mintPayment: dropContext(mintPayment),
+    {
+      finish: ({ facets }) => {
+        brand = facets.brand;
+        emptyAmount = AmountMath.makeEmpty(brand, assetKind);
+      },
     },
-  });
+  );
   return makeTheKit();
 };
 harden(makeDurablePaymentLedger);
