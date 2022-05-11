@@ -11,13 +11,14 @@ const { details: X } = assert;
 
 const updatePurseBalance = (state, newPurseBalance) => {
   state.currentBalance = newPurseBalance;
-  debugger;
-  // TODO(MSM): When I uncomment the following line,
-  // we get error "updatePurseBalance: no function"
-  // console.log('state: ', typeof state, Reflect.keys(state));
+  console.log('state: ', typeof state);
   console.log('balanceUpdater', typeof state.balanceUpdater);
   console.log('currentBalance', typeof state.currentBalance);
   state.balanceUpdater.updateState(state.currentBalance);
+  debugger;
+  // TODO(MSM): When I uncomment the following line,
+  // we get error "updatePurseBalance: no function"
+  Reflect.keys(state);
 };
 
 //  `getBrand` must not be called before the issuerKit is created
