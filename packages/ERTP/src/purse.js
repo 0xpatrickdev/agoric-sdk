@@ -18,7 +18,7 @@ const updatePurseBalance = (state, newPurseBalance) => {
   debugger;
   // TODO(MSM): When I uncomment the following line,
   // we get error "updatePurseBalance: no function"
-  Reflect.keys(state);
+  // Reflect.keys(state);
 };
 
 //  `getBrand` must not be called before the issuerKit is created
