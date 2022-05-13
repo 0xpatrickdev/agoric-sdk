@@ -725,7 +725,6 @@ export function makeVirtualObjectManager(
         const data = serialize(initialData[prop]);
         if (durable) {
           data.slots.forEach(vref => {
-            debugger;
             assert(vrm.isDurable(vref), X`value for ${prop} is not durable`);
           });
         }

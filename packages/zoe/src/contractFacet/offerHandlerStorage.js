@@ -3,16 +3,14 @@
 import { makeWeakStore } from '@agoric/store';
 import { ToFarFunction } from '@endo/marshal';
 
-import { makeHandle } from '../makeHandle.js';
-
-export const makeOfferHandlerStorage = () => {
+export const makeOfferHandlerStorage = makeInvitationHandle => {
   /** @type {WeakStore<InvitationHandle, OfferHandler>} */
   const invitationHandleToHandler = makeWeakStore('invitationHandle');
 
   /** @type {(offerHandler: OfferHandler) => InvitationHandle} */
   const storeOfferHandler = offerHandler => {
     const farOfferHandler = ToFarFunction('offerHandler', offerHandler);
-    const invitationHandle = makeHandle('Invitation');
+    const invitationHandle = makeInvitationHandle();
     invitationHandleToHandler.init(invitationHandle, farOfferHandler);
     return invitationHandle;
   };

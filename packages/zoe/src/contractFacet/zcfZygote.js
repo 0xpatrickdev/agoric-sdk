@@ -6,11 +6,12 @@ import { Far, Remotable, passStyleOf } from '@endo/marshal';
 import { AssetKind, AmountMath } from '@agoric/ertp';
 import { makeNotifierKit, observeNotifier } from '@agoric/notifier';
 import { makePromiseKit } from '@endo/promise-kit';
+import { makeScalarBigMapStore } from '@agoric/vat-data';
 
 import { cleanProposal, coerceAmountKeywordRecord } from '../cleanProposal.js';
 import { evalContractBundle } from './evalContractCode.js';
 import { makeExitObj } from './exit.js';
-import { makeHandle } from '../makeHandle.js';
+import { defineDurableHandle, makeHandle } from '../makeHandle.js';
 import { makeIssuerStorage } from '../issuerStorage.js';
 import { makeIssuerRecord } from '../issuerRecord.js';
 import { createSeatManager } from './zcfSeat.js';
@@ -30,7 +31,10 @@ export const makeZCFZygote = (
   zoeService,
   invitationIssuer,
   testJigSetter,
+  zcfBaggage = makeScalarBigMapStore('zcf baggage', { durable: true }),
 ) => {
+  const makeInvitationHandle = defineDurableHandle(zcfBaggage, 'Invitation');
+
   /** @type {PromiseRecord<ZoeInstanceAdmin>} */
   const zoeInstanceAdminPromiseKit = makePromiseKit();
   const zoeInstanceAdmin = zoeInstanceAdminPromiseKit.promise;
@@ -59,7 +63,8 @@ export const makeZCFZygote = (
       shutdownWithFailure,
     );
 
-  const { storeOfferHandler, takeOfferHandler } = makeOfferHandlerStorage();
+  const { storeOfferHandler, takeOfferHandler } =
+    makeOfferHandlerStorage(makeInvitationHandle);
 
   // Make the instanceRecord
   const {

@@ -15,6 +15,7 @@
  * @param {ERef<ZoeService>} zoeService
  * @param {Issuer} invitationIssuer
  * @param {TestJigSetter} testJigSetter
+ * @param {MapStore<string,any>} [zcfBaggage]
  * @returns {ZCFZygote}
  */
 

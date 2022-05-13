@@ -5,9 +5,12 @@ import { test } from '@agoric/zoe/tools/prepare-test-env-ava.js';
 import { Far } from '@endo/marshal';
 
 import { makeOfferHandlerStorage } from '../../../src/contractFacet/offerHandlerStorage.js';
+import { makeHandle } from '../../../src/makeHandle.js';
 
 test('offerHandlerStorage', async t => {
-  const { storeOfferHandler, takeOfferHandler } = makeOfferHandlerStorage();
+  const makeInvitationHandle = () => makeHandle('Invitation');
+  const { storeOfferHandler, takeOfferHandler } =
+    makeOfferHandlerStorage(makeInvitationHandle);
 
   const offerHandler = Far('offerHandler', () => {});
   const invitationHandle = storeOfferHandler(offerHandler);
