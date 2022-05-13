@@ -8,7 +8,11 @@ import { AssetKind, makeIssuerKit, AmountMath } from '../../src/index.js';
 
 test('makeIssuerKit bad allegedName', async t => {
   // @ts-expect-error Intentional wrong type for testing
-  t.throws(() => makeIssuerKit({}), { message: `{} must be a string` });
+  t.throws(() => makeIssuerKit(harden({})), { message: `{} must be a string` });
+  // @ts-expect-error Intentional wrong type for testing
+  t.throws(() => makeIssuerKit({}), {
+    message: `Cannot pass non-frozen objects like {}. Use harden()`,
+  });
 });
 
 test('makeIssuerKit bad assetKind', async t => {
@@ -77,11 +81,11 @@ test('makeIssuerKit malicious displayInfo', async t => {
         'myTokens',
         AssetKind.NAT,
         // @ts-expect-error Intentional wrong type for testing
-        Far('malicious', { doesSomething: () => {} }),
+        'bad displayInfo',
       ),
     {
       message:
-        '"displayInfo" "[Alleged: malicious]" must be a pass-by-copy record, not "remotable"',
+        '"displayInfo" "bad displayInfo" must be a pass-by-copy record, not "string"',
     },
   );
 });

@@ -12,7 +12,7 @@ export const provideFakeNotifierKit = baggage => {
     {
       notifier: {
         // [Symbol.asyncIterator]: () => ({}),
-        getUpdateSince: (_context, _updateCount = NaN) => ({}),
+        getUpdateSince: (_context, _updateCount = NaN) => harden({}),
       },
       updater: {
         updateState: (_context, _notifierState) => {},
