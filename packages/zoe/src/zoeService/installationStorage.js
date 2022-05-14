@@ -3,14 +3,40 @@
 import { assert, details as X } from '@agoric/assert';
 import { Far } from '@endo/marshal';
 import { E } from '@endo/eventual-send';
-import { makeWeakStore } from '@agoric/store';
+import { makeWeakStore, provide } from '@agoric/store';
+import {
+  defineDurableKind,
+  makeKindHandle,
+  makeScalarBigMapStore,
+} from '@agoric/vat-data';
 
 /** @typedef { import('@agoric/swingset-vat').BundleID} BundleID */
 
 /**
  * @param {GetBundleCapForID} getBundleCapForID
+ * @param {MapStore<string,any>} [zoeBaggage]
  */
-export const makeInstallationStorage = getBundleCapForID => {
+export const makeInstallationStorage = (
+  getBundleCapForID,
+  zoeBaggage = makeScalarBigMapStore('zoe baggage', { durable: true }),
+) => {
+  const bundleFreeInstallationKindHandle = provide(
+    zoeBaggage,
+    'bundleFreeInstallationKindHandle',
+    () => makeKindHandle('Installation'),
+  );
+  /** @type {() => Installation} */
+  // @ts-expect-error cast
+  const makeBundleFreeInstallation = defineDurableKind(
+    bundleFreeInstallationKindHandle,
+    () => ({}),
+    {
+      getBundle: () => {
+        throw Error('bundleID-based Installation');
+      },
+    },
+  );
+
   /** @type {WeakStore<Installation, { bundleCap: BundleCap, bundleID: BundleID }>} */
   const installationsBundleCap = makeWeakStore('installationsBundleCap');
   /** @type {WeakStore<Installation, SourceBundle>} */
@@ -34,13 +60,7 @@ export const makeInstallationStorage = getBundleCapForID => {
     const bundleCap = await getBundleCapForID(bundleID);
     // AWAIT
 
-    /** @type {Installation} */
-    // @ts-expect-error cast
-    const installation = Far('Installation', {
-      getBundle: () => {
-        throw Error('bundleID-based Installation');
-      },
-    });
+    const installation = makeBundleFreeInstallation();
     installationsBundleCap.init(installation, { bundleCap, bundleID });
     return installation;
   };
