@@ -2,18 +2,22 @@
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { test } from '@agoric/zoe/tools/prepare-test-env-ava.js';
-import { Far } from '@endo/marshal';
 
 import { makeIssuerKit, AssetKind, AmountMath } from '@agoric/ertp';
+import { makeScalarMap } from '@agoric/store';
 
 import { burnInvitation } from '../../../src/zoeService/offer/burnInvitation.js';
+import { defineDurableHandle } from '../../../src/makeHandle.js';
+
+/** @type {MapStore<string,any>} */
+const zcfBaggage = makeScalarMap('Invitation');
+const makeInvitationHandle = defineDurableHandle(zcfBaggage, 'Invitation');
+const makeInstanceHandle = defineDurableHandle(zcfBaggage, 'Instance');
 
 test('burnInvitation', async t => {
   const mockInvitationKit = makeIssuerKit('mockInvitation', AssetKind.SET);
-
-  const instanceHandle = Far('handle', {});
-  const invitationHandle = Far('handle', {});
-
+  const instanceHandle = makeInstanceHandle();
+  const invitationHandle = makeInvitationHandle();
   const invitation = mockInvitationKit.mint.mintPayment(
     AmountMath.make(
       mockInvitationKit.brand,
@@ -40,8 +44,8 @@ test('burnInvitation - not an invitation', async t => {
 test('burnInvitation - invitation already used', async t => {
   const mockInvitationKit = makeIssuerKit('mockInvitation', AssetKind.SET);
 
-  const instanceHandle = Far('handle', {});
-  const invitationHandle = Far('handle', {});
+  const instanceHandle = makeInstanceHandle();
+  const invitationHandle = makeInvitationHandle();
 
   const invitation = mockInvitationKit.mint.mintPayment(
     AmountMath.make(
@@ -67,9 +71,9 @@ test('burnInvitation - invitation already used', async t => {
 test('burnInvitation - multiple invitations', async t => {
   const mockInvitationKit = makeIssuerKit('mockInvitation', AssetKind.SET);
 
-  const instanceHandle = Far('handle', {});
-  const invitationHandle1 = Far('handle', {});
-  const invitationHandle2 = Far('handle', {});
+  const instanceHandle = makeInstanceHandle();
+  const invitationHandle1 = makeInvitationHandle();
+  const invitationHandle2 = makeInvitationHandle();
 
   const invitations = mockInvitationKit.mint.mintPayment(
     AmountMath.make(
