@@ -303,7 +303,7 @@ const expectedOTCDeskOkLog = [
   'Inventory removed',
   '{"brand":{},"value":2}',
 ];
-test('zoe - otcDesk - valid inputs', async t => {
+test.serial('zoe - otcDesk - valid inputs', async t => {
   const startingValues = [
     [10000, 10000, 10000],
     [10000, 10000, 10000],
