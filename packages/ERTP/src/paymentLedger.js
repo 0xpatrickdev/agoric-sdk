@@ -9,6 +9,7 @@ import {
   defineDurableKindMulti,
   makeKindHandle,
   makeScalarBigWeakMapStore,
+  dropContext,
 } from '@agoric/vat-data';
 import { AmountMath } from './amountMath.js';
 import { defineDurablePaymentKind } from './payment.js';
@@ -431,11 +432,6 @@ export const makeDurablePaymentLedger = (
       withdrawInternal,
     }),
   );
-
-  const dropContext =
-    fn =>
-    (_, ...args) =>
-      fn(...args);
 
   const issuerKitKindHandle = provide(
     issuerBaggage,

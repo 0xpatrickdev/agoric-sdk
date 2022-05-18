@@ -1,4 +1,5 @@
 /* global globalThis */
+
 import { assert } from '@agoric/assert';
 import {
   M,
@@ -6,6 +7,7 @@ import {
   makeScalarWeakMapStore,
   makeScalarSetStore,
   makeScalarWeakSetStore,
+  provide,
 } from '@agoric/store';
 
 export {
@@ -70,6 +72,7 @@ export const pickFacet =
   (maker, facetName) =>
   (...args) =>
     maker(...args)[facetName];
+harden(pickFacet);
 
 /**
  * Assign the values of all of the enumerable own properties from the source
@@ -82,3 +85,50 @@ export const pickFacet =
 export const partialAssign = (target, source) => {
   Object.assign(target, source);
 };
+harden(partialAssign);
+
+export const provideDurableSingleton = (
+  baggage,
+  kindHandleName,
+  kindName,
+  behavior,
+  options = undefined,
+) => {
+  const kindHandle = provide(baggage, kindHandleName, () =>
+    makeKindHandle(kindName),
+  );
+  const makeSingleton = defineDurableKind(
+    kindHandle,
+    () => ({}),
+    behavior,
+    options,
+  );
+  return makeSingleton();
+};
+harden(provideDurableSingleton);
+
+export const provideDurableSingletonKit = (
+  baggage,
+  kindHandleName,
+  kindName,
+  behaviorFacets,
+  options = undefined,
+) => {
+  const kindHandle = provide(baggage, kindHandleName, () =>
+    makeKindHandle(kindName),
+  );
+  const makeSingletonKit = defineDurableKindMulti(
+    kindHandle,
+    () => ({}),
+    behaviorFacets,
+    options,
+  );
+  return makeSingletonKit();
+};
+harden(provideDurableSingletonKit);
+
+export const dropContext =
+  fn =>
+  (_, ...args) =>
+    fn(...args);
+harden(dropContext);
