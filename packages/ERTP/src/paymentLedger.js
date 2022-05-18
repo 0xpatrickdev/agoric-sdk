@@ -1,6 +1,5 @@
 // @ts-check
 
-import { assert, details as X } from '@agoric/assert';
 import { E } from '@endo/eventual-send';
 import { isPromise } from '@endo/promise-kit';
 import { assertCopyArray } from '@endo/marshal';
@@ -16,6 +15,8 @@ import { defineDurablePaymentKind } from './payment.js';
 import { defineDurablePurse } from './purse.js';
 
 import '@agoric/store/exported.js';
+
+const { details: X } = assert;
 
 /**
  * Make the paymentLedger, the source of truth for the balances of

@@ -2,7 +2,6 @@
 
 import { E } from '@endo/eventual-send';
 import { provide } from '@agoric/store';
-import { assert, details as X } from '@agoric/assert';
 import { Nat } from '@agoric/nat';
 import {
   defineDurableKindMulti,
@@ -17,6 +16,7 @@ import './internal-types.js';
 import { makeNotifierKit } from '@agoric/notifier';
 import { makePromiseKit } from '@endo/promise-kit';
 
+const { details: X } = assert;
 /**
  * A fake clock that also logs progress.
  *
