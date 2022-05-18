@@ -3,7 +3,13 @@
 import { test } from '@agoric/zoe/tools/prepare-test-env-ava.js';
 
 import { E } from '@endo/eventual-send';
-import { Far } from '@endo/marshal';
+import { provide } from '@agoric/store';
+import {
+  makeKindHandle,
+  makeScalarBigMapStore,
+  defineDurableKind,
+} from '@agoric/vat-data';
+
 import buildManualTimer from '../../tools/manualTimer.js';
 
 test('manualTimer makeNotifier', async t => {
@@ -18,22 +24,26 @@ test('manualTimer makeNotifier', async t => {
   t.truthy(update2.value > update1.value);
 });
 
-function makeHandler() {
-  let calls = 0n;
-  const args = [];
-  return Far('wake handler', {
-    getCalls() {
-      return calls;
+const baggage = makeScalarBigMapStore('TestHandler', { durable: true });
+const testHandlerHandle = provide(baggage, 'TestHandlerKindHandle', () =>
+  makeKindHandle('TestHandler'),
+);
+const makeHandler = defineDurableKind(
+  testHandlerHandle,
+  () => ({ calls: 0n, args: harden([]) }),
+  {
+    getCalls: ({ state }) => {
+      return state.calls;
     },
-    getArgs() {
-      return args;
+    getArgs: ({ state }) => {
+      return state.args;
     },
-    wake(arg) {
-      args.push(arg);
-      calls += 1n;
+    wake: ({ state }, arg) => {
+      state.args = harden([...state.args, arg]);
+      state.calls += 1n;
     },
-  });
-}
+  },
+);
 
 test('manualTimer makeRepeater', async t => {
   const manualTimer = buildManualTimer(t.log, 0n);
@@ -43,6 +53,6 @@ test('manualTimer makeRepeater', async t => {
   await E(repeater).schedule(handler);
   await manualTimer.tick();
 
-  t.is(1n, handler.getCalls());
+  t.is(handler.getCalls(), 1n);
   t.truthy(handler.getArgs()[0] > timestamp);
 });
