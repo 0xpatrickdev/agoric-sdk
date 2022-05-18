@@ -8,6 +8,10 @@ import {
 import { E } from '@endo/eventual-send';
 import { assert, details as X } from '@agoric/assert';
 import { Far } from '@endo/marshal';
+import {
+  provideDurableSingleton,
+  makeScalarBigMapStore,
+} from '@agoric/vat-data/src';
 
 import { natSafeMath } from '../src/contractSupport/index.js';
 
@@ -178,21 +182,27 @@ export async function makeFakePriceAuthority(options) {
   }
 
   async function startTicker() {
+    const paBaggage = makeScalarBigMapStore('ManualTimer', { durable: true });
     let firstTime = true;
-    const handler = Far('wake handler', {
-      wake: async t => {
-        if (firstTime) {
-          firstTime = false;
-        } else {
-          currentPriceIndex += 1;
-        }
-        latestTick = t;
-        tickUpdater.updateState(t);
-        for (const req of comparisonQueue) {
-          checkComparisonRequest(req);
-        }
-      },
-    });
+    const makeHandler = baggage =>
+      provideDurableSingleton(baggage, 'WakerKindHandle', 'Waker', {
+        wake: async t => {
+          if (firstTime) {
+            firstTime = false;
+          } else {
+            currentPriceIndex += 1;
+          }
+          latestTick = t;
+          tickUpdater.updateState(t);
+          for (const req of comparisonQueue) {
+            checkComparisonRequest(req);
+          }
+        },
+      });
+    /** @type {Waker} */
+    // @ts-ignore cast
+    const handler = makeHandler(paBaggage);
+
     const repeater = E(timer).makeRepeater(0n, quoteInterval);
     return E(repeater).schedule(handler);
   }
