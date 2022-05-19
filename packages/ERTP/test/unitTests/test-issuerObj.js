@@ -63,7 +63,7 @@ test('issuer.getAssetKind', t => {
   t.is(issuer.getAssetKind(), AssetKind.NAT);
 });
 
-test('issuer.makeEmptyPurse', async t => {
+test.skip('issuer.makeEmptyPurse', async t => {
   t.plan(9);
   const { issuer, mint, brand } = makeIssuerKit('fungible');
   const purse = issuer.makeEmptyPurse();
@@ -140,7 +140,7 @@ test('purse.withdraw overdrawn', async t => {
   });
 });
 
-test('purse.deposit', async t => {
+test.skip('purse.deposit', async t => {
   t.plan(7);
   const { issuer, mint, brand } = makeIssuerKit('fungible');
   const fungible0 = AmountMath.makeEmpty(brand);
@@ -204,7 +204,7 @@ test('purse.deposit promise', async t => {
   );
 });
 
-test('purse.getDepositFacet', async t => {
+test.skip('purse.getDepositFacet', async t => {
   t.plan(4);
   const { issuer, mint, brand } = makeIssuerKit('fungible');
   const fungible25 = AmountMath.make(brand, 25n);

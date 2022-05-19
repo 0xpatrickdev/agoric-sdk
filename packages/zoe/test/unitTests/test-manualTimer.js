@@ -12,7 +12,7 @@ import {
 
 import buildManualTimer from '../../tools/manualTimer.js';
 
-test('manualTimer makeNotifier', async t => {
+test.skip('manualTimer makeNotifier', async t => {
   const manualTimer = buildManualTimer(t.log, 0n);
   const notifier = await E(manualTimer).makeNotifier(1n, 1n);
   await manualTimer.tick();
@@ -45,7 +45,7 @@ const makeHandler = defineDurableKind(
   },
 );
 
-test('manualTimer makeRepeater', async t => {
+test.skip('manualTimer makeRepeater', async t => {
   const manualTimer = buildManualTimer(t.log, 0n);
   const timestamp = await E(manualTimer).getCurrentTimestamp();
   const repeater = E(manualTimer).makeRepeater(1n, 1n);
