@@ -105,7 +105,7 @@ harden(provideDurableIssuerKit);
  *  displayInfo: DisplayInfo,
  * }}
  */
-const makeDurableIssuerKit = (
+export const makeDurableIssuerKit = (
   issuerBaggage,
   allegedName,
   // @ts-expect-error K could be instantiated with a different subtype of AssetKind
