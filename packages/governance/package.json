@@ -51,6 +51,9 @@
     "import-meta-resolve": "^1.1.1",
     "ses": "^0.15.15"
   },
+  "eslintIgnore": [
+    "bundle-*.js"
+  ],
   "files": [
     "README.md",
     "src/",

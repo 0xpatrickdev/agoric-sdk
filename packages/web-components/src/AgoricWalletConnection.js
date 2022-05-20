@@ -133,7 +133,7 @@ export const makeAgoricWalletConnection = (makeCapTP = defaultMakeCapTP) =>
           return this._bridgePK.promise;
         },
         reset: () => {
-          this.reset();
+          void this.reset();
         },
       });
 
