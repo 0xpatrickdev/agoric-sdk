@@ -103,7 +103,7 @@ export const provideDurableSingleton = (
     behavior,
     options,
   );
-  return makeSingleton();
+  return provide(baggage, `the_${kindName}`, () => makeSingleton());
 };
 harden(provideDurableSingleton);
 
@@ -123,7 +123,7 @@ export const provideDurableSingletonKit = (
     behaviorFacets,
     options,
   );
-  return makeSingletonKit();
+  return provide(baggage, `the_${kindName}`, () => makeSingletonKit());
 };
 harden(provideDurableSingletonKit);
 
