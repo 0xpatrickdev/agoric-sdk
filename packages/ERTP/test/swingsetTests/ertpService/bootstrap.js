@@ -11,27 +11,15 @@ export const buildRootObject = async (vatPowers, vatParameters, baggage) => {
   const issuerBaggageSet = makeScalarBigSetStore('BaggageSet', {
     durable: true,
   });
-  const ertpService = provideDurableSingleton(
-    baggage,
-    'ERTPServiceKindHandle',
-    'ERTPService',
-    {
-      makeIssuer: (
-        allegedName,
-        assetKind = AssetKind.NAT,
-        displayInfo = harden({}),
-      ) => {
-        const issuerBaggage = makeScalarBigMapStore('IssuerBaggage', {
-          durable: true,
-        });
-        const issuerKit = makeDurableIssuerKit(
-          issuerBaggage,
-          allegedName,
-          assetKind,
-          displayInfo,
-        );
-        issuerBaggageSet.add(issuerBaggage);
-      },
+  baggage.init('IssuerBaggageSet', issuerBaggageSet);
+
+  const obj0 = Far('root', {
+    async bootstrap(vats) {
+      const aliceMaker = await E(vats.alice).makeAliceMaker();
+      const ertpService = await E(vats.ertp).makeErtpService();
+      const aliceP = E(aliceMaker).make();
+      return E(aliceP).testErtpService(ertpService);
     },
-  );
+  });
+  return obj0;
 };
