@@ -1,5 +1,4 @@
 // @ts-check
-/* eslint-disable jsdoc/require-returns-type */
 import { assert, details as X, q } from '@agoric/assert';
 
 /**

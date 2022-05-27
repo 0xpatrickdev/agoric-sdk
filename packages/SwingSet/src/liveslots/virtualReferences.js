@@ -1,6 +1,4 @@
 // @ts-check
-/* eslint-disable no-use-before-define, jsdoc/require-returns-type */
-
 import { assert, details as X } from '@agoric/assert';
 import { Nat } from '@agoric/nat';
 import { parseVatSlot } from '../lib/parseVatSlots.js';
