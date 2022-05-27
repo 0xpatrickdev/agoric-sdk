@@ -42,7 +42,6 @@
 
 const { details: X, quote: q } = assert;
 
-// eslint-disable-next-line jsdoc/require-returns-check
 /**
  * @param {unknown} connectionSpec
  * @returns {asserts connectionSpec is HttpConnectionSpec}
@@ -72,7 +71,6 @@ const assertHttpConnectionSpec = connectionSpec => {
   );
 };
 
-// eslint-disable-next-line jsdoc/require-returns-check
 /**
  * @param {unknown} connectionSpec
  * @returns {asserts connectionSpec is CosmosConnectionSpec}
