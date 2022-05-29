@@ -33,7 +33,7 @@ func Test_Key_Encoding(t *testing.T) {
 			if key := PathToEncodedKey(tt.keyStr); !bytes.Equal(key, tt.key) {
 				t.Errorf("pathToKey(%q) = %v, want %v", tt.keyStr, key, tt.key)
 			}
-			if keyStr := KeyToPath(tt.key); keyStr != tt.keyStr {
+			if keyStr := EncodedKeyToPath(tt.key); keyStr != tt.keyStr {
 				t.Errorf("keyToString(%v) = %q, want %q", tt.key, keyStr, tt.keyStr)
 			}
 		})
