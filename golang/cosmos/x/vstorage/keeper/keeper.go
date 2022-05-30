@@ -5,9 +5,10 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/Agoric/agoric-sdk/golang/cosmos/x/vstorage/types"
 	db "github.com/tendermint/tm-db"
+
+	agoric "github.com/Agoric/agoric-sdk/golang/cosmos/types"
+	"github.com/Agoric/agoric-sdk/golang/cosmos/x/vstorage/types"
 )
 
 // Keeper maintains the link to data storage and exposes getter/setter methods
@@ -110,6 +111,19 @@ func (k Keeper) LegacySetStorageAndNotify(ctx sdk.Context, path, value string) {
 	)
 }
 
+func (k Keeper) SetStorageAndNotify(ctx sdk.Context, path, value string) {
+	k.LegacySetStorageAndNotify(ctx, path, value)
+
+	// Emit the new state change event.
+	ctx.EventManager().EmitEvent(
+		agoric.NewStateChangeEvent(
+			k.GetStoreName(),
+			k.PathToEncodedKey(path),
+			[]byte(value),
+		),
+	)
+}
+
 // SetStorage sets the data value for a path.
 //
 // Maintains the invariant: path entries exist if and only if self or some
@@ -150,4 +164,12 @@ func (k Keeper) SetStorage(ctx sdk.Context, path, value string) {
 			store.Set(encodedKey, types.EncodedDataPrefix)
 		}
 	}
+}
+
+func (k Keeper) PathToEncodedKey(path string) []byte {
+	return types.PathToEncodedKey(path)
+}
+
+func (k Keeper) GetStoreName() string {
+	return k.storeKey.Name()
 }

@@ -52,7 +52,7 @@ func (sh vstorageHandler) Receive(cctx *vm.ControllerContext, str string) (ret s
 	switch msg.Method {
 	case "set":
 		//fmt.Printf("giving Keeper.SetStorage(%s) %s\n", msg.Key, msg.Value)
-		keeper.LegacySetStorageAndNotify(cctx.Context, msg.Key, msg.Value)
+		keeper.SetStorageAndNotify(cctx.Context, msg.Key, msg.Value)
 		return "true", nil
 
 	case "get":
