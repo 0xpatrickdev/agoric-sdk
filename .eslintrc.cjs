@@ -50,6 +50,7 @@ module.exports = {
     'coverage/**',
     '**/output/**',
     'bundles/**',
+    'bundle-*',
     'dist/**',
     'test262/**',
     'ava*.config.js',
