@@ -16,7 +16,7 @@ export const buildRootObject = async (vatPowers, vatParameters, baggage) => {
   const obj0 = Far('root', {
     async bootstrap(vats) {
       const aliceMaker = await E(vats.alice).makeAliceMaker();
-      const ertpService = await E(vats.ertp).makeErtpService();
+      const ertpService = await E(vats.ertp).getErtpService();
       const aliceP = E(aliceMaker).make();
       return E(aliceP).startTest(testName, ertpService);
     },
