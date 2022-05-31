@@ -8,21 +8,22 @@ import (
 	agoric "github.com/Agoric/agoric-sdk/golang/cosmos/types"
 )
 
-func NewStreamCell(blockHeight int64) StreamCell {
+func NewStreamCell(blockHeight int64, seq uint64) StreamCell {
 	return StreamCell{
-		UpdatedBlockHeight: blockHeight,
-		EndState:           StreamCell_END_STATE_APPENDABLE,
-		Values:             make([][]byte, 0, 1),
-		Prior:              NewZeroStreamPosition(),
+		UpdatedBlockHeight:  blockHeight,
+		EndState:            StreamCell_END_STATE_APPENDABLE,
+		Values:              make([][]byte, 0, 1),
+		Prior:               NewZeroStreamPosition(),
+		FirstSequenceNumber: seq,
 	}
 }
 
-func NewStreamPosition(blockHeight int64, storeName string, subkey []byte, valuesCount uint64) StreamPosition {
+func NewStreamPosition(blockHeight int64, storeName string, subkey []byte, seq uint64) StreamPosition {
 	return StreamPosition{
-		BlockHeight: blockHeight,
-		StoreName:   storeName,
-		StoreSubkey: subkey,
-		ValueOffset: valuesCount,
+		BlockHeight:    blockHeight,
+		StoreName:      storeName,
+		StoreSubkey:    subkey,
+		SequenceNumber: seq,
 	}
 }
 

@@ -31,14 +31,20 @@ message StreamCell {
         (gogoproto.moretags)   = "yaml:\"updated_block_height\""
     ];
 
-    // The state of the stream.
-    EndState end_state = 3 [
+    // The first value's sequence number.  0 means unspecified
+    uint64 first_sequence_number = 3 [
+        (gogoproto.jsontag)    = "first_sequence_number",
+        (gogoproto.moretags)   = "yaml:\"first_sequence_number\""
+    ];
+
+    // The state as of the last value.
+    EndState end_state = 4 [
         (gogoproto.jsontag)    = "end_state",
         (gogoproto.moretags)   = "yaml:\"end_state\""
     ];
 
     // The prior position in the stream.
-    StreamPosition prior = 4 [
+    StreamPosition prior = 5 [
       (gogoproto.nullable) = false
     ];
 }
@@ -63,8 +69,8 @@ message StreamPosition {
         (gogoproto.moretags)   = "yaml:\"store_subkey\""
     ];
 
-    // The offset in the values array of this position.
-    uint64 value_offset = 4 [
+    // The sequence number of the value at this position.
+    uint64 sequence_number = 4 [
         (gogoproto.jsontag)    = "value_offset",
         (gogoproto.moretags)   = "yaml:\"value_offset\""
     ];
