@@ -53,6 +53,16 @@ module.exports = {
     'bundle-*',
     'dist/**',
     'test262/**',
+    '*.html',
     'ava*.config.js',
+  ],
+  overrides: [
+    {
+      // disable type-aware linting in HTML
+      files: ['*.html'],
+      parserOptions: {
+        project: false,
+      },
+    },
   ],
 };
