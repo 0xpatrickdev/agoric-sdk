@@ -15,6 +15,7 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
+	agoric "github.com/Agoric/agoric-sdk/golang/cosmos/types"
 	"github.com/Agoric/agoric-sdk/golang/cosmos/vm"
 	"github.com/Agoric/agoric-sdk/golang/cosmos/x/swingset/types"
 )
@@ -292,6 +293,19 @@ func (k Keeper) GetKeys(ctx sdk.Context, path string) *types.Keys {
 	return &keys
 }
 
+func (k Keeper) SetStorageAndNotify(ctx sdk.Context, path, value string) {
+	k.SetStorage(ctx, path, value)
+
+	// Emit the new state change event.
+	ctx.EventManager().EmitEvent(
+		agoric.NewStateChangeEvent(
+			k.GetStoreName(),
+			k.PathToEncodedKey(path),
+			[]byte(value),
+		),
+	)
+}
+
 // SetStorage sets the entire generic storage for a path
 func (k Keeper) SetStorage(ctx sdk.Context, path, value string) {
 	store := ctx.KVStore(k.storeKey)
@@ -382,4 +396,16 @@ func (k Keeper) GetMailbox(ctx sdk.Context, peer string) string {
 func (k Keeper) SetMailbox(ctx sdk.Context, peer string, mailbox string) {
 	path := "mailbox." + peer
 	k.SetStorage(ctx, path, mailbox)
+}
+
+func (k Keeper) PathToEncodedKey(path string) []byte {
+	dataKey := stringToKey(path)
+	encodedKey := make([]byte, 0, len(types.DataPrefix)+len(dataKey))
+	encodedKey = append(encodedKey, types.DataPrefix...)
+	encodedKey = append(encodedKey, dataKey...)
+	return encodedKey
+}
+
+func (k Keeper) GetStoreName() string {
+	return k.storeKey.Name()
 }

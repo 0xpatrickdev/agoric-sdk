@@ -2,9 +2,11 @@ package keeper
 
 import (
 	"bytes"
+	"encoding/base64"
 	"testing"
 
 	"github.com/Agoric/agoric-sdk/golang/cosmos/app/params"
+	agoric "github.com/Agoric/agoric-sdk/golang/cosmos/types"
 	"github.com/Agoric/agoric-sdk/golang/cosmos/x/swingset/types"
 
 	"github.com/cosmos/cosmos-sdk/store"
@@ -104,14 +106,101 @@ func keysEqual(a, b []string) bool {
 	return true
 }
 
+func b64e(s string) []byte {
+	return []byte(base64.StdEncoding.EncodeToString([]byte(s)))
+}
+
+func b64d(b []byte) ([]byte, error) {
+	return base64.StdEncoding.DecodeString(string(b))
+}
+
+type attrValues map[string][]byte
+
+func checkEvents(t *testing.T, ctx sdk.Context, expectedEvents map[string]attrValues) map[string]attrValues {
+	eventValues := make(map[string]attrValues)
+	for _, event := range ctx.EventManager().ABCIEvents() {
+		expectedAttrs, ok := expectedEvents[event.Type]
+		if !ok {
+			t.Errorf("got unexpected event %s", event.Type)
+		}
+		delete(expectedEvents, event.Type)
+
+		attrValues := make(map[string][]byte)
+		eventValues[event.Type] = attrValues
+		for _, attr := range event.Attributes {
+			expectedValue, ok := expectedAttrs[string(attr.Key)]
+			if !ok {
+				t.Errorf("got unexpected attribute %s %s", event.Type, attr.Key)
+			}
+			delete(expectedAttrs, string(attr.Key))
+			if !bytes.Equal(attr.Value, expectedValue) {
+				t.Errorf("got %q %q %q, want %q", event.Type, string(attr.Key), string(attr.Value), expectedValue)
+			}
+			attrValues[string(attr.Key)] = attr.Value
+		}
+
+		if len(expectedAttrs) > 0 {
+			t.Errorf("missing expected %s attributes: %v", event.Type, expectedAttrs)
+		}
+	}
+	if len(expectedEvents) > 0 {
+		t.Errorf("missing expected events: %v", expectedEvents)
+	}
+
+	return eventValues
+}
+
 func TestStorage(t *testing.T) {
 	testKit := makeTestKit()
 	ctx, keeper := testKit.ctx, testKit.swingsetKeeper
 
 	// Test that we can store and retrieve a value.
-	keeper.SetStorage(ctx, "inited", "initValue")
-	if got := keeper.GetStorage(ctx, "inited"); got != "initValue" {
-		t.Errorf("got %q, want %q", got, "initValue")
+	initValue := "initValue\xc3\x28"
+	if got := []byte(initValue); got[len(got)-1] != 0x28 {
+		t.Errorf("expected last byte to be 0x28, got %x", got[len(got)-1])
+	}
+	keeper.SetStorageAndNotify(ctx, "inited", initValue)
+	if got := keeper.GetStorage(ctx, "inited"); got != initValue {
+		t.Errorf("got %q, want %q", got, initValue)
+	}
+
+	// Check that our new state update coordinates work.
+	expectedEvents := map[string]attrValues{
+		types.EventTypeStorage: {
+			types.AttributeKeyPath:  []byte("inited"),
+			types.AttributeKeyValue: []byte(initValue),
+		},
+		agoric.EventTypeStateChange: {
+			agoric.AttributeKeyStoreName:     []byte(keeper.storeKey.Name()),
+			agoric.AttributeKeyStoreSubkey:   b64e("swingset/data:inited"),
+			agoric.AttributeKeyUnprovedValue: b64e(initValue),
+		},
+	}
+	eventValues := checkEvents(t, ctx, expectedEvents)
+
+	// Verify that the storage is obtainable from any event.
+	for eventType, attrValues := range eventValues {
+		switch eventType {
+		case types.EventTypeStorage:
+			path := string(attrValues[types.AttributeKeyPath])
+			value := string(attrValues[types.AttributeKeyValue])
+			if got := keeper.GetStorage(ctx, path); got != value {
+				t.Errorf("got %q %q, want %q", path, got, value)
+			}
+		case agoric.EventTypeStateChange:
+			dataStore := ctx.KVStore(keeper.storeKey)
+			subkey, err := b64d(attrValues[agoric.AttributeKeyStoreSubkey])
+			if err != nil {
+				t.Fatal(err)
+			}
+			unprovedValue, err := b64d(attrValues[agoric.AttributeKeyUnprovedValue])
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := dataStore.Get(subkey); !bytes.Equal(got, unprovedValue) {
+				t.Errorf("got %q, want %q", got, unprovedValue)
+			}
+		}
 	}
 
 	// Test that unknown keys return empty string.
