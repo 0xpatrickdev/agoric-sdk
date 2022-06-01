@@ -29,7 +29,7 @@ test('ertp service upgrade', async t => {
   const run = async (name, args = []) => {
     assert(Array.isArray(args));
     debugger;
-    const kpid = c.queueToVatRoot('bootstrap', name, { body: '[]', slots: [] });
+    const kpid = c.queueToVatRoot('bootstrap', name, args);
     await c.run();
     const status = c.kpStatus(kpid);
     console.log(`${status}`);
