@@ -6,13 +6,16 @@ import {
   makeScalarBigSetStore,
   provideDurableSingleton,
 } from '@agoric/vat-data/src';
-import { AssetKind, makeDurableIssuerKit } from '../../../src';
+import { provide } from '@agoric/store';
+
+import { AssetKind, makeDurableIssuerKit } from '../../../../src';
 
 function makeErtpService(baggage, exitVatWithFailure) {
-  const issuerBaggageSet = makeScalarBigSetStore('BaggageSet', {
-    durable: true,
-  });
-  baggage.init('IssuerBaggageSet', issuerBaggageSet);
+  const issuerBaggageSet = provide(baggage, 'BaggageSet', () =>
+    makeScalarBigSetStore('BaggageSet', {
+      durable: true,
+    }),
+  );
 
   const ertpService = provideDurableSingleton(
     baggage,
