@@ -18,7 +18,7 @@ import { Bech32 } from '@cosmjs/encoding';
 import { MsgInstallBundle } from '@agoric/cosmic-proto/swingset/msgs.js';
 
 // https://github.com/Agoric/agoric-sdk/blob/master/golang/cosmos/daemon/main.go
-const Agoric = {
+export const Agoric = {
   Bech32MainPrefix: 'agoric',
   CoinType: 564,
   proto: {
@@ -35,8 +35,8 @@ const Agoric = {
   gasPrice: { denom: 'uist', amount: Decimal.fromUserInput('50000000', 0) },
 };
 
-const hdPath = (coinType = 118, account = 0) =>
-  stringToPath(`m/44'/${coinType}'/${account}'/0/0`);
+export const hdPath = (coinType = 118, accountIndex = 0) =>
+  stringToPath(`m/44'/${coinType}'/0'/0/${accountIndex}`);
 
 const registry = new Registry([
   ...defaultRegistryTypes,

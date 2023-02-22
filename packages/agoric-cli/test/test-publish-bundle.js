@@ -5,11 +5,14 @@ import '@endo/init/debug.js';
 
 import * as http from 'http';
 import test from 'ava';
+import { Slip10RawIndex } from '@cosmjs/crypto';
 
 import { makeJsonHttpClient } from '../src/json-http-client-node.js';
 import {
   makeBundlePublisher,
   makeHttpBundlePublisher,
+  hdPath,
+  Agoric,
 } from '../src/publish.js';
 
 /** @type {import('../src/publish.js').EndoZipBase64Bundle} */
@@ -183,5 +186,48 @@ test('publish bundle with fake HTTP server ok', async t => {
       host: 'localhost',
       port,
     }),
+  );
+});
+
+test('hdPath should resolve to supported derivations', t => {
+  // 'm/44'/564'/0'/0/1`
+  const accountIndex = 1;
+  const slip10HdPath = hdPath(Agoric.CoinType, accountIndex);
+  t.deepEqual(
+    slip10HdPath[0],
+    Slip10RawIndex.hardened(44),
+    "hdPath should contain m44'",
+  );
+  t.deepEqual(
+    slip10HdPath[1],
+    Slip10RawIndex.hardened(564),
+    "coinType should be 564' for Agoric",
+  );
+  t.deepEqual(
+    slip10HdPath[2],
+    Slip10RawIndex.hardened(0),
+    "account path should always be 0'",
+  );
+  t.deepEqual(
+    slip10HdPath[3],
+    Slip10RawIndex.normal(0),
+    'change path should always be 0',
+  );
+  t.deepEqual(
+    slip10HdPath[4],
+    Slip10RawIndex.normal(accountIndex),
+    'accountIndex should determine address index path',
+  );
+  // 'm/44'/118'/0'/0/0`
+  const cosmosSlip10HdPath = hdPath();
+  t.deepEqual(
+    cosmosSlip10HdPath[1],
+    Slip10RawIndex.hardened(118),
+    "coinType should be 118' for Cosmos",
+  );
+  t.deepEqual(
+    cosmosSlip10HdPath[4],
+    Slip10RawIndex.normal(0),
+    'accountIndex should determine address index path',
   );
 });
