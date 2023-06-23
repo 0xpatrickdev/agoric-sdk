@@ -6,8 +6,15 @@ import { isNat } from '@endo/nat';
 
 import { natSafeMath } from './safeMath.js';
 
-const { multiply, floorDivide, ceilDivide, bankersDivide, add, subtract } =
-  natSafeMath;
+const {
+  multiply,
+  floorDivide,
+  ceilDivide,
+  bankersDivide,
+  add,
+  subtract,
+  exponentiate,
+} = natSafeMath;
 
 // make a Ratio, which represents a fraction. It is a pass-by-copy record.
 //
@@ -292,6 +299,24 @@ export const oneMinus = ratio => {
 };
 
 /**
+ * Add 1n to a ratio.
+ *
+ * @param {Ratio} ratio
+ * @returns {Ratio}
+ */
+export const onePlus = ratio => {
+  assertIsRatio(ratio);
+  ratio.numerator.brand === ratio.denominator.brand ||
+    Fail`onePlus only supports ratios with a single brand, but ${ratio.numerator.brand} doesn't match ${ratio.denominator.brand}`;
+  return makeRatio(
+    add(ratio.denominator.value, ratio.numerator.value),
+    ratio.numerator.brand,
+    ratio.denominator.value,
+    ratio.numerator.brand,
+  );
+};
+
+/**
  * @param {Ratio} left
  * @param {Ratio} right
  * @returns {boolean}
@@ -398,4 +423,143 @@ export const ratioToNumber = ratio => {
   const n = Number(ratio.numerator.value);
   const d = Number(ratio.denominator.value);
   return n / d;
+};
+
+/**
+ * Raises the base ratio to the power of the exponent ratio, using Newton's
+ * method.
+ * The base ratio and exponent ratios should all have the same brand for their
+ * numerators and denominators.
+ *
+ * @param {Ratio} base
+ * @param {Ratio} exponent
+ * @param {bigint} [precision]
+ * @returns {Ratio}
+ */
+export const exponentiateRatiosNewton = (base, exponent, precision = 8n) => {
+  assertIsRatio(base);
+  assertIsRatio(exponent);
+  isNat(precision) ||
+    Fail`The precision value must be a NatValue, not ${precision}`;
+
+  // Ensure all ratios are of a single brand
+  base.numerator.brand === base.denominator.brand ||
+    base.numerator.brand === exponent.numerator.brand ||
+    base.denominator.brand === exponent.denominator.brand ||
+    Fail`base and exponent ratios must have the same brand`;
+
+  /**
+   * Use Newton's method to calculate nth root of BigInt
+   *
+   * @param {bigint} base
+   * @param {bigint} root
+   * @returns {bigint}
+   */
+  const nthRoot = (base, root) => {
+    if (base <= 0n) return 0n;
+    const rootMinusOne = subtract(root, 1n);
+
+    let xPrev = base;
+    let xNext = bankersDivide(
+      add(
+        multiply(rootMinusOne, xPrev),
+        bankersDivide(base, exponentiate(xPrev, rootMinusOne)),
+      ),
+      root,
+    );
+    while (xNext < xPrev) {
+      xPrev = xNext;
+      xNext = bankersDivide(
+        add(
+          multiply(rootMinusOne, xPrev),
+          bankersDivide(base, exponentiate(xPrev, rootMinusOne)),
+        ),
+        root,
+      );
+    }
+    return xPrev;
+  };
+
+  // Calculate baseNumerator^exponentNumerator and baseDenominator^exponentNumerator
+  const baseNumeratorPowered = exponentiate(
+    base.numerator.value,
+    exponent.numerator.value,
+  );
+  const baseDenominatorPowered = exponentiate(
+    base.denominator.value,
+    exponent.numerator.value,
+  );
+
+  const nRoot = nthRoot(baseNumeratorPowered, exponent.denominator.value);
+  const dRoot = nthRoot(baseDenominatorPowered, exponent.denominator.value);
+
+  return quantize(
+    makeRatio(nRoot, base.numerator.brand, dRoot, base.denominator.brand),
+    10n ** precision,
+  );
+};
+
+/**
+ * Raises the base ratio to the power of the exponent ratio, using Binary
+ * Search.
+ * The base ratio and exponent ratios should all have the same brand for their
+ * numerators and denominators.
+ *
+ * @param {Ratio} base
+ * @param {Ratio} exponent
+ * @param {bigint} [precision]
+ * @returns {Ratio}
+ */
+export const exponentiateRatiosBinary = (base, exponent, precision = 8n) => {
+  assertIsRatio(base);
+  assertIsRatio(exponent);
+  isNat(precision) ||
+    Fail`The precision value must be a NatValue, not ${precision}`;
+
+  // Ensure all ratios are of a single brand
+  base.numerator.brand === base.denominator.brand ||
+    base.numerator.brand === exponent.numerator.brand ||
+    base.denominator.brand === exponent.denominator.brand ||
+    Fail`base and exponent ratios must have the same brand`;
+
+  /**
+   * Approximate the dth root using binary search
+   * @param {bigint} value
+   * @param {bigint} root nth root
+   * */
+  const binaryRoot = (value, root) => {
+    let low = 1n;
+    let high = value;
+    while (low <= high) {
+      const mid = bankersDivide(add(low, high), 2n);
+      const midPow = exponentiate(mid, root);
+      if (midPow === value) {
+        return mid;
+      } else if (midPow < value) {
+        low = add(mid, 1n);
+      } else {
+        high = subtract(mid, 1n);
+      }
+    }
+    return low - 1n;
+  };
+
+  // Calculate baseNumerator^exponentNumerator and baseDenominator^exponentNumerator
+  const baseNumeratorPowered = exponentiate(
+    base.numerator.value,
+    exponent.numerator.value,
+  );
+  const baseDenominatorPowered = exponentiate(
+    base.denominator.value,
+    exponent.numerator.value,
+  );
+
+  // Calculate the dth root of baseNumeratorPowered and baseDenominatorPowered
+  const nRoot = binaryRoot(baseNumeratorPowered, exponent.denominator.value);
+  const dRoot = binaryRoot(baseDenominatorPowered, exponent.denominator.value);
+
+  return quantize(
+    makeRatio(nRoot, base.numerator.brand, dRoot, base.denominator.brand),
+    10n ** precision,
+  );
 };

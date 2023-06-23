@@ -19,6 +19,9 @@ import {
   multiplyBy,
   subtractRatios,
   parseRatio,
+  onePlus,
+  exponentiateRatiosBinary,
+  exponentiateRatiosNewton,
 } from '../../../src/contractSupport/ratio.js';
 
 /**
@@ -484,6 +487,28 @@ test('ratio - oneMinus', t => {
   });
 });
 
+test('ratio - onePlus', t => {
+  const { brand } = makeIssuerKit('moe');
+  const moe = value => AmountMath.make(brand, value);
+  const oneThird = makeRatioFromAmounts(moe(1n), moe(3n));
+  const fourThirds = onePlus(oneThird);
+  t.deepEqual(fourThirds, makeRatio(4n, brand, 3n));
+
+  const fourPercent = makeRatioFromAmounts(moe(1n), moe(25n));
+  const oneSpotZeroFour = onePlus(fourPercent);
+  t.deepEqual(oneSpotZeroFour, makeRatio(26n, brand, 25n));
+
+  const oneHundredPercent = makeRatioFromAmounts(moe(1n), moe(1n));
+  const twoHundredPercent = onePlus(oneHundredPercent);
+  t.deepEqual(twoHundredPercent, makeRatio(2n, brand, 1n));
+
+  // @ts-expect-error invalid arguments for testing
+  t.throws(() => onePlus(moe(3n)), {
+    message:
+      'Parameter must be a Ratio record, but {"brand":"[Alleged: moe brand]","value":"[3n]"} has "brand"',
+  });
+});
+
 // Rounding
 const { brand } = makeIssuerKit('moe');
 
@@ -573,5 +598,131 @@ test('ratio - parse', t => {
   t.deepEqual(
     parseRatio(Number.MAX_SAFE_INTEGER + 2, moeBrand),
     makeRatio(9007199254740992n, moeBrand, 1n, moeBrand),
+  );
+});
+
+test('exponentiate ratios', t => {
+  const { brand: tribBrand } = makeIssuerKit('tribbles');
+
+  const nPeriods = {
+    daily: makeRatio(365n, tribBrand, 1n),
+    monthly: makeRatio(12n, tribBrand, 1n),
+    yearly: makeRatio(1n, tribBrand, 1n),
+  };
+
+  const rates = {
+    four: makeRatio(1n, tribBrand, 25n),
+    five: makeRatio(1n, tribBrand, 20n),
+    ten: makeRatio(1n, tribBrand, 10n),
+  };
+
+  const amounts = {
+    tenLarge: AmountMath.make(tribBrand, 10_000n),
+    tenBig: AmountMath.make(tribBrand, 10_000_000n),
+    tenBil: AmountMath.make(tribBrand, 10_000_000_000n),
+  };
+
+  const terms = {
+    oneMonth: makeRatio(1n, tribBrand, 12n),
+    threeMonths: makeRatio(1n, tribBrand, 4n),
+    sixMonths: makeRatio(1n, tribBrand, 2n),
+    oneYear: makeRatio(1n, tribBrand, 1n),
+    twoYears: makeRatio(2n, tribBrand, 1n),
+  };
+
+  /**
+   * Calculates compounding interest with BigInt & Ratios
+   * Formula: C = P(1 + r/n)^(nt)
+   *
+   * @param {Amount<"nat">} principal principal in underlying unit
+   * @param {Ratio} rate
+   * @param {Ratio} time time in years
+   * @param {Ratio} nPeriod number of compounding periods per year
+   * @param {bigint} precision number of decimals, should come from the brand denom
+   * @param {bigint} expected expected result, principal plus interest
+   * @param {string} [message] ava test description
+   * @returns {void}
+   */
+  const assertCompoundingInterest = (
+    principal,
+    rate,
+    time,
+    nPeriod,
+    precision,
+    expected,
+    message,
+  ) => {
+    const base = onePlus(multiplyRatios(rate, invertRatio(nPeriod)));
+    const exponent = multiplyRatios(nPeriod, time);
+    const cumulativeInterestBinary = multiplyBy(
+      principal,
+      exponentiateRatiosBinary(base, exponent, precision),
+    );
+    t.deepEqual(cumulativeInterestBinary.value, expected, message);
+    const cumulativeInterestNewton = multiplyBy(
+      principal,
+      exponentiateRatiosNewton(base, exponent, precision),
+    );
+    t.deepEqual(cumulativeInterestNewton.value, expected, message);
+  };
+
+  assertCompoundingInterest(
+    amounts.tenBig,
+    rates.ten,
+    terms.sixMonths,
+    nPeriods.daily,
+    9n,
+    10_512_639n,
+    '10m tribbles @10% for 6 months, compounded daily',
+  );
+
+  assertCompoundingInterest(
+    amounts.tenLarge,
+    rates.ten,
+    terms.sixMonths,
+    nPeriods.daily,
+    6n,
+    10_513n,
+    '10k tribbles @10% for 6 months, compounded daily',
+  );
+
+  assertCompoundingInterest(
+    amounts.tenBig,
+    rates.ten,
+    terms.oneYear,
+    nPeriods.yearly,
+    9n,
+    11_000_000n,
+    '10m tribbles @10% for 1 year, compounded yearly (no compounding)',
+  );
+
+  assertCompoundingInterest(
+    amounts.tenBil,
+    rates.four,
+    terms.threeMonths,
+    nPeriods.daily,
+    12n,
+    10_100_496_137n,
+    '10b tribbles @4% for 3 months, compounded daily',
+  );
+
+  assertCompoundingInterest(
+    amounts.tenBil,
+    rates.five,
+    terms.twoYears,
+    nPeriods.monthly,
+    12n,
+    11_049_413_356n,
+    '10b tribbles @5% for 2 years, compounded monthly',
+  );
+
+  assertCompoundingInterest(
+    amounts.tenBil,
+    rates.five,
+    terms.twoYears,
+    nPeriods.daily,
+    12n,
+    11_051_633_491n,
+    '10b tribbles @5% for 2 years, compounded daily',
   );
 });

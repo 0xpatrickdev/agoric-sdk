@@ -46,4 +46,6 @@ export const natSafeMath = harden({
   },
   /** @type {(x: number | bigint, y: number | bigint) => boolean} */
   isGTE: (x, y) => Nat(x) >= Nat(y),
+  /** @type {NatOp} */
+  exponentiate: (x, y) => Nat(x) ** Nat(y),
 });
