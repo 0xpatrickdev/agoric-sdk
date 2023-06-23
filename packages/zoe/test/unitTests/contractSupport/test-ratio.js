@@ -614,6 +614,7 @@ test('exponentiate ratios', t => {
     four: makeRatio(1n, tribBrand, 25n),
     five: makeRatio(1n, tribBrand, 20n),
     ten: makeRatio(1n, tribBrand, 10n),
+    fourSpotFiveNine: makeRatio(459n, tribBrand, 10_000n),
   };
 
   const amounts = {
@@ -622,13 +623,16 @@ test('exponentiate ratios', t => {
     tenBil: AmountMath.make(tribBrand, 10_000_000_000n),
   };
 
-  const terms = {
+  const terms = harden({
+    oneDay: makeRatio(1n, tribBrand, 365n),
     oneMonth: makeRatio(1n, tribBrand, 12n),
     threeMonths: makeRatio(1n, tribBrand, 4n),
     sixMonths: makeRatio(1n, tribBrand, 2n),
     oneYear: makeRatio(1n, tribBrand, 1n),
     twoYears: makeRatio(2n, tribBrand, 1n),
-  };
+    june23Ytd: denom =>
+      quantize(makeRatio(1687554611256n, tribBrand, 3155760000000n), denom),
+  });
 
   /**
    * Calculates compounding interest with BigInt & Ratios
@@ -654,16 +658,24 @@ test('exponentiate ratios', t => {
   ) => {
     const base = onePlus(multiplyRatios(rate, invertRatio(nPeriod)));
     const exponent = multiplyRatios(nPeriod, time);
+    let b0, b1, n0, n1;
+    b0 = performance.now();
     const cumulativeInterestBinary = multiplyBy(
       principal,
       exponentiateRatiosBinary(base, exponent, precision),
     );
+    b1 = performance.now();
     t.deepEqual(cumulativeInterestBinary.value, expected, message);
+    n0 = performance.now();
     const cumulativeInterestNewton = multiplyBy(
       principal,
       exponentiateRatiosNewton(base, exponent, precision),
     );
+    n1 = performance.now();
     t.deepEqual(cumulativeInterestNewton.value, expected, message);
+    const b = Math.round((b1 - b0) * 1000) / 1000;
+    const n = Math.round((n1 - n0) * 1000) / 1000;
+    t.log(`Binary ${b}ms. Newton ${n}ms. ${message}.`);
   };
 
   assertCompoundingInterest(
@@ -681,7 +693,7 @@ test('exponentiate ratios', t => {
     rates.ten,
     terms.sixMonths,
     nPeriods.daily,
-    6n,
+    4n,
     10_513n,
     '10k tribbles @10% for 6 months, compounded daily',
   );
@@ -691,7 +703,7 @@ test('exponentiate ratios', t => {
     rates.ten,
     terms.oneYear,
     nPeriods.yearly,
-    9n,
+    7n,
     11_000_000n,
     '10m tribbles @10% for 1 year, compounded yearly (no compounding)',
   );
@@ -701,7 +713,7 @@ test('exponentiate ratios', t => {
     rates.four,
     terms.threeMonths,
     nPeriods.daily,
-    12n,
+    10n,
     10_100_496_137n,
     '10b tribbles @4% for 3 months, compounded daily',
   );
@@ -711,7 +723,7 @@ test('exponentiate ratios', t => {
     rates.five,
     terms.twoYears,
     nPeriods.monthly,
-    12n,
+    10n,
     11_049_413_356n,
     '10b tribbles @5% for 2 years, compounded monthly',
   );
@@ -721,8 +733,48 @@ test('exponentiate ratios', t => {
     rates.five,
     terms.twoYears,
     nPeriods.daily,
-    12n,
+    10n,
     11_051_633_491n,
     '10b tribbles @5% for 2 years, compounded daily',
   );
+
+  assertCompoundingInterest(
+    amounts.tenBil,
+    rates.fourSpotFiveNine,
+    terms.twoYears,
+    nPeriods.daily,
+    10n,
+    10_961_392_445n,
+    '10b tribbles @4.59% for 2 years, compounded daily',
+  );
+
+  assertCompoundingInterest(
+    amounts.tenBil,
+    rates.fourSpotFiveNine,
+    terms.threeMonths,
+    nPeriods.daily,
+    10n,
+    10_115_403_606n,
+    '10b tribbles @4.59% for 3 months, compounded daily',
+  );
+
+  // assertCompoundingInterest(
+  //   amounts.tenBil,
+  //   rates.ten,
+  //   terms.oneDay,
+  //   nPeriods.daily,
+  //   10n,
+  //   10_115_403_606n,
+  //   '10b tribbles @10% for 1 day, compounded daily',
+  // );
+
+  // assertCompoundingInterest(
+  //   amounts.tenBig,
+  //   rates.ten,
+  //   terms.june23Ytd(1_000n),
+  //   nPeriods.daily,
+  //   7n,
+  //   10_038_320_832n,
+  //   '10b tribbles @10% for 0.535 years, compounded daily',
+  // );
 });
