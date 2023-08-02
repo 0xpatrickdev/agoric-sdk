@@ -31,6 +31,21 @@
   },
   {
     "module": "@agoric/inter-protocol/scripts/add-collateral-core.js",
+    "entrypoint": "defaultProposalBuilder",
+    "args": [
+      {
+        "interchainAssetOptions": {
+          "denom": "ibc/toystatom",
+          "decimalPlaces": 4,
+          "keyword": "STATOM",
+          "oracleBrand": "STATOM",
+          "proposedName": "stATOM"
+        }
+      }
+    ]
+  },
+  {
+    "module": "@agoric/inter-protocol/scripts/add-collateral-core.js",
     "entrypoint": "psmProposalBuilder",
     "args": [
       {
@@ -113,6 +128,31 @@
           "agoricNames",
           "oracleBrand",
           "ATOM"
+        ],
+        "IN_BRAND_DECIMALS": 6,
+        "OUT_BRAND_LOOKUP": [
+          "agoricNames",
+          "oracleBrand",
+          "USD"
+        ],
+        "OUT_BRAND_DECIMALS": 4
+      }
+    ]
+  },
+  {
+    "module": "@agoric/inter-protocol/scripts/price-feed-core.js",
+    "entrypoint": "defaultProposalBuilder",
+    "args": [
+      {
+        "AGORIC_INSTANCE_NAME": "stATOM-USD price feed",
+        "oracleAddresses": [
+          "@PRIMARY_ADDRESS@",
+          "agoric1dy0yegdsev4xvce3dx7zrz2ad9pesf5svzud6y"
+        ],
+        "IN_BRAND_LOOKUP": [
+          "agoricNames",
+          "oracleBrand",
+          "STATOM"
         ],
         "IN_BRAND_DECIMALS": 6,
         "OUT_BRAND_LOOKUP": [

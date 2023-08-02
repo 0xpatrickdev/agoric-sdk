@@ -103,7 +103,7 @@ scenario1-run-chain:
 scenario1-run-client:
 	AG_SOLO_BASEDIR=$$PWD/t9/$(BASE_PORT) $(AG_SOLO) setup --network-config=http://localhost:8001/network-config --webport=$(BASE_PORT)
 
-BOOT_COINS=1000000000000000ubld,500000000000000uist,100provisionpass,100sendpacketpass,1000000000000ibc/toyusdc,1000000000000ibc/toyatom
+BOOT_COINS=1000000000000000ubld,500000000000000uist,100provisionpass,100sendpacketpass,1000000000000ibc/toyusdc,1000000000000ibc/toyatom,1000000000000ibc/toystatom
 
 # Deprecated.
 scenario2-setup-nobuild: scenario2-setup
@@ -191,7 +191,7 @@ scenario2-run-client: t1-provision-one-with-powers t1-start-ag-solo
 
 # Provision the ag-solo from an provisionpass-holding address (idempotent).
 AGORIC_POWERS = agoric.ALL_THE_POWERS
-SOLO_COINS = 13000000ubld,12345000000uist,1122000000ibc/toyusdc,3344000000ibc/toyatom
+SOLO_COINS = 13000000ubld,12345000000uist,1122000000ibc/toyusdc,3344000000ibc/toyatom,3344000000ibc/toystatom
 COSMOS_RPC_HOST = localhost
 COSMOS_RPC_PORT = 26657
 wait-for-cosmos:
