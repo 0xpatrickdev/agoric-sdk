@@ -11,6 +11,7 @@
     "build": "yarn build:bundles",
     "build:bundles": "node ./scripts/build-bundles.js",
     "build:add-STARS-proposal": "agoric run scripts/add-STARS.js",
+    "build:add-stATOM-proposal": "agoric run scripts/add-stATOM.js",
     "prepack": "tsc --build jsconfig.build.json",
     "postpack": "git clean -f '*.d.ts*' src/types.js",
     "test": "ava",
