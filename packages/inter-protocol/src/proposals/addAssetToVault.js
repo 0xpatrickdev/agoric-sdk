@@ -106,10 +106,7 @@ export const publishInterchainAssetFromBank = async (
   await Promise.all([
     E(E(agoricNamesAdmin).lookupAdmin('issuer')).update(issuerName, issuer),
     E(E(agoricNamesAdmin).lookupAdmin('brand')).update(issuerName, brand),
-    // The provisionPool uses the vbank issuerName as a keyword in
-    // a call to zcf.saveIssuer(). So to satisfy the initial-uppercase
-    // constraint, use a keyword as the issuerName in the vbank registry.
-    E(bankManager).addAsset(denom, keyword, proposedName, kit),
+    E(bankManager).addAsset(denom, issuerName, proposedName, kit),
   ]);
 };
 
