@@ -16,10 +16,10 @@ export * from './startPSM.js';
  * @property {string} [issuerBoardId]
  * @property {string} [denom]
  * @property {number} [decimalPlaces]
- * @property {string} proposedName
+ * @property {string} [proposedName]
  * @property {string} keyword
  * @property {string} [issuerName]
- * @property {string} oracleBrand
+ * @property {string} [oracleBrand]
  * @property {number} [initialPrice]
  */
 
@@ -72,7 +72,7 @@ export const publishInterchainAssetFromBank = async (
     decimalPlaces,
     keyword,
     issuerName = keyword,
-    proposedName,
+    proposedName = keyword,
   } = interchainAssetOptions;
 
   // Incompatible with issuerBoardId.
@@ -106,7 +106,10 @@ export const publishInterchainAssetFromBank = async (
   await Promise.all([
     E(E(agoricNamesAdmin).lookupAdmin('issuer')).update(issuerName, issuer),
     E(E(agoricNamesAdmin).lookupAdmin('brand')).update(issuerName, brand),
-    E(bankManager).addAsset(denom, issuerName, proposedName, kit),
+    // The provisionPool uses the vbank issuerName as a keyword in
+    // a call to zcf.saveIssuer(). So to satisfy the initial-uppercase
+    // constraint, use a keyword as the issuerName in the vbank registry.
+    E(bankManager).addAsset(denom, keyword, proposedName, kit),
   ]);
 };
 
@@ -130,7 +133,7 @@ export const registerScaledPriceAuthority = async (
   const {
     keyword: kwd,
     issuerName = kwd,
-    oracleBrand,
+    oracleBrand = issuerName,
     initialPrice: initialPriceRaw,
   } = interchainAssetOptions;
   assert.typeof(issuerName, 'string');
@@ -244,12 +247,17 @@ export const addAssetToVault = async (
     },
   },
 ) => {
-  const { keyword, issuerName = keyword, oracleBrand } = interchainAssetOptions;
+  const {
+    keyword,
+    issuerName = keyword,
+    oracleBrand = issuerName,
+  } = interchainAssetOptions;
+  assert.typeof(keyword, 'string');
   assert.typeof(issuerName, 'string');
   assert.typeof(oracleBrand, 'string');
   const [interchainIssuer] = await reserveThenGetNames(
     E(agoricNamesAdmin).lookupAdmin('issuer'),
-    [keyword],
+    [issuerName],
   );
 
   const oracleInstanceName = instanceNameFor(oracleBrand, 'USD');
@@ -259,7 +267,7 @@ export const addAssetToVault = async (
 
   const stable = await stableP;
   const vaultFactoryCreator = E.get(vaultFactoryKit).creatorFacet;
-  await E(vaultFactoryCreator).addVaultType(interchainIssuer, oracleBrand, {
+  await E(vaultFactoryCreator).addVaultType(interchainIssuer, keyword, {
     debtLimit: AmountMath.make(stable, BigInt(debtLimitValue)),
     interestRate: makeRatio(interestRateValue, stable),
     // The rest of these we use safe defaults.
