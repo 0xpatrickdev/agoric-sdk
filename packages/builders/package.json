@@ -8,6 +8,7 @@
   "scripts": {
     "build": "exit 0",
     "build:add-STARS-proposal": "agoric run scripts/inter-protocol/add-STARS.js",
+    "build:add-stATOM-proposal": "agoric run scripts/inter-protocol/add-stATOM.js",
     "build:restart-vats-proposal": "agoric run scripts/vats/restart-vats.js",
     "build:zcf-proposal": "agoric run scripts/vats/replace-zoe.js",
     "prepack": "tsc --build tsconfig.build.json",
