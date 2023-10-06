@@ -24,9 +24,11 @@ const { quote: q } = assert;
  * @property {string} [issuerBoardId]
  * @property {string} [denom]
  * @property {number} [decimalPlaces]
- * @property {string} [proposedName]
- * @property {string} keyword
- * @property {string} oracleBrand
+ * @property {string} keyword - used in regstering with reserve, vaultFactory
+ * @property {string} [issuerName] - used in agoricNames for compatibility:
+ *   defaults to `keyword` if not provided
+ * @property {string} [proposedName] - defaults to `issuerName` if not provided
+ * @property {string} [oracleBrand] - defaults to `issuerName` if not provided
  * @property {number} [initialPrice]
  */
 
@@ -42,18 +44,22 @@ export const publishInterchainAssetFromBoardId = async (
   { consume: { board, agoricNamesAdmin } },
   { options: { interchainAssetOptions } },
 ) => {
-  const { issuerBoardId, keyword } = interchainAssetOptions;
+  const {
+    issuerBoardId,
+    keyword,
+    issuerName = keyword,
+  } = interchainAssetOptions;
   // Incompatible with denom.
   assert.equal(interchainAssetOptions.denom, undefined);
   assert.typeof(issuerBoardId, 'string');
-  assert.typeof(keyword, 'string');
+  assert.typeof(issuerName, 'string');
 
   const issuer = await E(board).getValue(issuerBoardId);
   const brand = await E(issuer).getBrand();
 
   return Promise.all([
-    E(E(agoricNamesAdmin).lookupAdmin('issuer')).update(keyword, issuer),
-    E(E(agoricNamesAdmin).lookupAdmin('brand')).update(keyword, brand),
+    E(E(agoricNamesAdmin).lookupAdmin('issuer')).update(issuerName, issuer),
+    E(E(agoricNamesAdmin).lookupAdmin('brand')).update(issuerName, brand),
   ]);
 };
 
@@ -72,18 +78,23 @@ export const publishInterchainAssetFromBank = async (
   },
   { options: { interchainAssetOptions } },
 ) => {
-  const { denom, decimalPlaces, proposedName, keyword } =
-    interchainAssetOptions;
+  const {
+    denom,
+    decimalPlaces,
+    keyword,
+    issuerName = keyword,
+    proposedName = keyword,
+  } = interchainAssetOptions;
 
   // Incompatible with issuerBoardId.
   assert.equal(interchainAssetOptions.issuerBoardId, undefined);
   assert.typeof(denom, 'string');
-  assert.typeof(keyword, 'string');
   assert.typeof(decimalPlaces, 'number');
+  assert.typeof(issuerName, 'string');
   assert.typeof(proposedName, 'string');
 
   const terms = {
-    keyword,
+    keyword: issuerName, // "keyword" is a misnomer in mintHolder terms
     assetKind: AssetKind.NAT,
     displayInfo: {
       decimalPlaces,
@@ -93,7 +104,7 @@ export const publishInterchainAssetFromBank = async (
 
   const { creatorFacet: mint, publicFacet: issuer } = await E(startUpgradable)({
     installation: mintHolder,
-    label: keyword,
+    label: issuerName,
     privateArgs: undefined,
     terms,
   });
@@ -104,9 +115,9 @@ export const publishInterchainAssetFromBank = async (
   await E(E.get(reserveKit).creatorFacet).addIssuer(issuer, keyword);
 
   await Promise.all([
-    E(E(agoricNamesAdmin).lookupAdmin('issuer')).update(keyword, issuer),
-    E(E(agoricNamesAdmin).lookupAdmin('brand')).update(keyword, brand),
-    E(bankManager).addAsset(denom, keyword, proposedName, kit),
+    E(E(agoricNamesAdmin).lookupAdmin('issuer')).update(issuerName, issuer),
+    E(E(agoricNamesAdmin).lookupAdmin('brand')).update(issuerName, brand),
+    E(bankManager).addAsset(denom, issuerName, proposedName, kit),
   ]);
 };
 
@@ -129,10 +140,11 @@ export const registerScaledPriceAuthority = async (
 ) => {
   const {
     keyword,
-    oracleBrand,
+    issuerName = keyword,
+    oracleBrand = issuerName,
     initialPrice: initialPriceRaw,
   } = interchainAssetOptions;
-  assert.typeof(keyword, 'string');
+  assert.typeof(issuerName, 'string');
   assert.typeof(oracleBrand, 'string');
 
   const [
@@ -143,7 +155,7 @@ export const registerScaledPriceAuthority = async (
   ] = await Promise.all([
     priceAuthority,
     reserveThenGetNames(E(agoricNamesAdmin).lookupAdmin('brand'), [
-      keyword,
+      issuerName,
       'IST',
     ]),
     reserveThenGetNames(E(agoricNamesAdmin).lookupAdmin('oracleBrand'), [
@@ -201,7 +213,7 @@ export const registerScaledPriceAuthority = async (
 
   const spaKit = await E(startUpgradable)({
     installation: scaledPriceAuthority,
-    label: `scaledPriceAuthority-${keyword}`,
+    label: `scaledPriceAuthority-${issuerName}`,
     terms,
   });
 
@@ -315,12 +327,17 @@ export const addAssetToVault = async (
     },
   },
 ) => {
-  const { keyword, oracleBrand } = interchainAssetOptions;
+  const {
+    keyword,
+    issuerName = keyword,
+    oracleBrand = issuerName,
+  } = interchainAssetOptions;
   assert.typeof(keyword, 'string');
+  assert.typeof(issuerName, 'string');
   assert.typeof(oracleBrand, 'string');
   const [interchainIssuer] = await reserveThenGetNames(
     E(agoricNamesAdmin).lookupAdmin('issuer'),
-    [keyword],
+    [issuerName],
   );
 
   const oracleInstanceName = instanceNameFor(oracleBrand, 'USD');
@@ -344,7 +361,7 @@ export const addAssetToVault = async (
 
   const stable = await stableP;
   const vaultFactoryCreator = E.get(vaultFactoryKit).creatorFacet;
-  await E(vaultFactoryCreator).addVaultType(interchainIssuer, oracleBrand, {
+  await E(vaultFactoryCreator).addVaultType(interchainIssuer, keyword, {
     debtLimit: AmountMath.make(stable, BigInt(debtLimitValue)),
     interestRate: makeRatio(interestRateValue, stable),
     // The rest of these we use safe defaults.
