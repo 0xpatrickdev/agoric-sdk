@@ -88,13 +88,13 @@ export const psmProposalBuilder = async (
           psm: publishRef(
             install(
               '@agoric/inter-protocol/src/psm/psm.js',
-              '../bundles/bundle-psm.js',
+              '@agoric/inter-protocol/bundles/bundle-psm.js',
             ),
           ),
           mintHolder: publishRef(
             install(
               '@agoric/vats/src/mintHolder.js',
-              '../../vats/bundles/bundle-mintHolder.js',
+              '@agoric/vats/bundles/bundle-mintHolder.js',
             ),
           ),
         },
