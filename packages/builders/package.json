@@ -10,6 +10,8 @@
     "build:add-STARS-proposal": "agoric run scripts/inter-protocol/add-STARS.js",
     "build:restart-vats-proposal": "agoric run scripts/vats/restart-vats.js",
     "build:zcf-proposal": "agoric run scripts/vats/replace-zoe.js",
+    "build:USDC-proposal": "ANCHOR_DENOM=ibc/FE98AAD68F02F03565E9FA39A5E627946699B2B07115889ED812D8BA639576A9 INTERCHAIN_DENOM=irrelevant agoric run scripts/inter-protocol/add-collateral-core.js",
+    "build:USDT-proposal": "ANCHOR_DENOM=ibc/079DAF1995A28BCD3B4E3D38948BB0FBC1CDE47939820CBAB7C02AFB88FF31A3 INTERCHAIN_DENOM=irrelevant agoric run scripts/inter-protocol/add-collateral-core.js",
     "prepack": "tsc --build tsconfig.build.json",
     "postpack": "git clean -f '*.d.ts*'",
     "test": "ava",
