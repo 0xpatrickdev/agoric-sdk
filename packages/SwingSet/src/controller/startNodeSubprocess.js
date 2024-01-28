@@ -15,8 +15,12 @@ export function makeStartSubprocessWorkerNode(
     if (profileVats.includes(vatID)) {
       args.push('--cpu-prof');
       args.push('--cpu-prof-interval');
-      args.push('100');
+      args.push('1');
       args.push('--cpu-prof-name');
+      // cf. https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap03.html#tag_03_282
+      nameDisplayArg = nameDisplayArg
+        .replaceAll(':', '-')
+        .replaceAll(/[^a-z0-9._-]/gi, '_');
       args.push(`CPU.${nameDisplayArg}.cpuprofile`);
     }
     if (debugVats.includes(vatID)) {
