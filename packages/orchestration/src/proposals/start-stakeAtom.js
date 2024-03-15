@@ -9,7 +9,7 @@ const trace = makeTracer('StartStakeAtom', true);
  * @param {BootstrapPowers & {installation: {consume: {stakeAtom: Installation<import('../contracts/stakeAtom.contract.js').start>}}}} powers
  */
 export const startStakeAtom = async ({
-  consume: { board, chainStorage, localchain, startUpgradable },
+  consume: { board, chainStorage, localchain, network, startUpgradable },
   installation: {
     consume: { stakeAtom },
   },
@@ -28,15 +28,22 @@ export const startStakeAtom = async ({
   // NB: committee must only publish what it intended to be public
   const marshaller = await E(board).getPublishingMarshaller();
 
+  /** @type {import('@agoric/network/src/types.js').Port} random port assignment from network */
+  const port = await E(network).bind('/ibc-port/');
+
   // FIXME this isn't detecting missing privateArgs
   /** @type {StartUpgradableOpts<import('../contracts/stakeAtom.contract.js').start>} */
   const startOpts = {
     label: 'stakeAtom',
     installation: stakeAtom,
     issuerKeywordRecord: harden({ ATOM: await stakeIssuer }),
-    terms: {},
+    terms: {
+      controllerConnectionId: 'connection-649', // XXX get from well-known
+      hostConnectionId: 'connection-8', // XXX get from well-known
+    },
     privateArgs: {
       localchain: await localchain,
+      port,
       storageNode,
       marshaller,
     },
@@ -55,6 +62,7 @@ export const getManifestForStakeAtom = ({ restoreRef }, { installKeys }) => {
           board: true,
           chainStorage: true,
           localchain: true,
+          network: true,
           startUpgradable: true,
         },
         installation: {
