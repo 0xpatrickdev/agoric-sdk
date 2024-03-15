@@ -1,5 +1,8 @@
 // @ts-check
 
+// Ensure this is a module.
+export {};
+
 /**
  * @template T
  * @typedef {Promise<T | import('@agoric/vow').Vow<T>>} PromiseVow
