@@ -4,6 +4,7 @@ import { Fail } from '@agoric/assert';
 /**
  * @import { IBCConnectionID } from '@agoric/vats';
  * @import { ChainAddress, CosmosValidatorAddress } from '../types.js';
+ * @import { RemoteIbcAddress } from '@agoric/vats/tools/ibc-utils.js';
  */
 
 /**
@@ -14,6 +15,7 @@ import { Fail } from '@agoric/assert';
  * @param {'ordered' | 'unordered'} [opts.ordering] - channel ordering. currently only `ordered` is supported for ics27-1
  * @param {string} [opts.txType] - default is `sdk_multi_msg`
  * @param {string} [opts.version] - default is `ics27-1`
+ * @returns {RemoteIbcAddress}
  */
 export const makeICAConnectionAddress = (
   hostConnectionId,
@@ -42,10 +44,10 @@ export const makeICAConnectionAddress = (
  * Parse a chain address from a remote address string.
  * Assumes the address string is in a JSON format and contains an "address" field.
  * This function is designed to be safe against malformed inputs and unexpected data types, and will return `undefined` in those cases.
- * @param {string} remoteAddressString - remote address string, including version
- * @returns {string | undefined} returns undefined on error
+ * @param {RemoteIbcAddress} remoteAddressString - remote address string, including version
+ * @returns {ChainAddress['address'] | undefined} returns undefined on error
  */
-export const parseAddress = remoteAddressString => {
+export const findAddressField = remoteAddressString => {
   try {
     // Extract JSON version string assuming it's always surrounded by {}
     const jsonStr = remoteAddressString?.match(/{.*?}/)?.[0];
@@ -55,4 +57,4 @@ export const parseAddress = remoteAddressString => {
     return undefined;
   }
 };
-harden(parseAddress);
+harden(findAddressField);
