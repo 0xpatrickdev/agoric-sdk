@@ -67,6 +67,18 @@
     "./cosmos/staking/v1beta1/tx.js": {
       "types": "./dist/codegen/cosmos/staking/v1beta1/tx.d.ts",
       "default": "./dist/codegen/cosmos/staking/v1beta1/tx.js"
+    },
+    "./cosmos/bank/v1beta1/query.js": {
+      "types": "./dist/codegen/cosmos/bank/v1beta1/query.d.ts",
+      "default": "./dist/codegen/cosmos/bank/v1beta1/query.js"
+    },
+    "./icq/v1/packet.js": {
+      "types": "./dist/codegen/icq/v1/packet.d.ts",
+      "default": "./dist/codegen/icq/v1/packet.js"
+    },
+    "./tendermint/abci/types.js": {
+      "types": "./dist/codegen/tendermint/abci/types.d.ts",
+      "default": "./dist/codegen/tendermint/abci/types.js"
     }
   },
   "main": "dist/index.js",

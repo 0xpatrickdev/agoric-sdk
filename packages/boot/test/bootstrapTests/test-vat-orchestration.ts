@@ -1,12 +1,17 @@
 import { test as anyTest } from '@agoric/zoe/tools/prepare-test-env-ava.js';
 import type { ExecutionContext, TestFn } from 'ava';
 
-import type { AnyJson } from '@agoric/cosmic-proto';
+import type { AnyJson, RequestQueryJson } from '@agoric/cosmic-proto';
+import {
+  QueryBalanceRequest,
+  QueryBalanceResponse,
+} from '@agoric/cosmic-proto/cosmos/bank/v1beta1/query.js';
+import { Any } from '@agoric/cosmic-proto/google/protobuf/any';
 import {
   MsgDelegate,
   MsgDelegateResponse,
 } from '@agoric/cosmic-proto/cosmos/staking/v1beta1/tx.js';
-import { Any } from '@agoric/cosmic-proto/google/protobuf/any';
+import { RequestQuery } from '@agoric/cosmic-proto/tendermint/abci/types.js';
 import type { OrchestrationService } from '@agoric/orchestration';
 import { decodeBase64 } from '@endo/base64';
 import { M, matches } from '@endo/patterns';
@@ -19,9 +24,9 @@ type DefaultTestContext = Awaited<ReturnType<typeof makeTestContext>>;
 const test: TestFn<DefaultTestContext> = anyTest;
 
 /**
- * To update, pass the message into `makeTxPacket` from `@agoric/orchestration`,
- *  and paste the resulting `data` key into `protoMsgMocks` in
- * [mocks.js](../../tools/ibc/mocks.js).
+ * To update, pass the message into `makeTxPacket` or `makeQueryPacket` from
+ * `@agoric/orchestration`, and paste the resulting `data` key into `protoMsgMocks`
+ * in [mocks.js](../../tools/ibc/mocks.js).
  * If adding a new msg, reference the mock in the `sendPacket` switch statement
  * in [supports.ts](../../tools/supports.ts).
  */
@@ -32,6 +37,17 @@ const delegateMsgSuccess = Any.toJSON(
     amount: { denom: 'uatom', amount: '10' },
   }),
 ) as AnyJson;
+const balanceQuery = RequestQuery.toJSON(
+  RequestQuery.fromPartial({
+    path: '/cosmos.bank.v1beta1.Query/Balance',
+    data: QueryBalanceRequest.encode(
+      QueryBalanceRequest.fromPartial({
+        address: 'cosmos1test',
+        denom: 'uatom',
+      }),
+    ).finish(),
+  }),
+) as RequestQueryJson;
 
 test.before(async t => {
   t.context = await makeTestContext(t);
@@ -133,7 +149,7 @@ test('ICA connection can send msg with proto3', async t => {
   // @ts-expect-error intentional
   await t.throwsAsync(EV(account).executeEncodedTx('malformed'), {
     message:
-      'In "executeEncodedTx" method of (ChainAccount account): arg 0: string "malformed" - Must be a copyArray',
+      'In "executeEncodedTx" method of (ChainAccountKit account): arg 0: string "malformed" - Must be a copyArray',
   });
 
   const txSuccess = await EV(account).executeEncodedTx([delegateMsgSuccess]);
@@ -172,4 +188,82 @@ test('ICA connection can send msg with proto3', async t => {
   await t.throwsAsync(EV(account).executeEncodedTx([delegateMsgFailure]), {
     message: 'ABCI code: 5: error handling packet: see events for details',
   });
+});
+
+test('Query connection can be created', async t => {
+  const {
+    runUtils: { EV },
+  } = t.context;
+
+  type Powers = { orchestration: OrchestrationService };
+  const contract = async ({ orchestration }: Powers) => {
+    const connection =
+      await EV(orchestration).createQueryConnection('connection-0');
+    t.log('Query Connection', connection);
+    t.truthy(connection, 'createQueryConnection returns a connection');
+    t.truthy(
+      matches(connection, M.remotable('QueryConnection')),
+      'QueryConnection is a remotable',
+    );
+  };
+
+  // core eval context
+  {
+    const orchestration: OrchestrationService =
+      await EV.vat('bootstrap').consumeItem('orchestration');
+    await contract({ orchestration });
+  }
+});
+
+test('Query connection can send a query', async t => {
+  const {
+    runUtils: { EV },
+  } = t.context;
+
+  type Powers = { orchestration: OrchestrationService };
+  const contract = async ({ orchestration }: { Powers }) => {
+    const queryConnection: QueryConnection =
+      await EV(orchestration).createQueryConnection('connection-0');
+
+    const [result] = await EV(queryConnection).query([balanceQuery]);
+    t.is(result.code, 0);
+    t.is(typeof result.height, 'bigint');
+    t.deepEqual(QueryBalanceResponse.decode(decodeBase64(result.key)), {
+      balance: {
+        amount: '0',
+        denom: 'uatom',
+      },
+    });
+
+    const results = await EV(queryConnection).query([
+      balanceQuery,
+      balanceQuery,
+    ]);
+    t.is(results.length, 2);
+    for (const { key } of results) {
+      t.deepEqual(QueryBalanceResponse.decode(decodeBase64(key)), {
+        balance: {
+          amount: '0',
+          denom: 'uatom',
+        },
+      });
+    }
+
+    await t.throwsAsync(
+      EV(queryConnection).query([
+        { ...balanceQuery, path: '/cosmos.bank.v1beta1.QueryBalanceRequest' },
+      ]),
+      {
+        message: 'ABCI code: 4: error handling packet: see events for details',
+      },
+      'Use gRPC method to query, not protobuf typeUrl',
+    );
+  };
+
+  // core eval context
+  {
+    const orchestration: OrchestrationService =
+      await EV.vat('bootstrap').consumeItem('orchestration');
+    await contract({ orchestration });
+  }
 });

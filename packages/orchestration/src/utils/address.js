@@ -39,6 +39,20 @@ export const makeICAChannelAddress = (
   });
   return `/ibc-hop/${controllerConnectionId}/ibc-port/icahost/${ordering}/${connString}`;
 };
+harden(makeICAChannelAddress);
+
+/**
+ * @param {IBCConnectionID}  controllerConnectionId
+ * @param {{ version?: string }} [opts]
+ */
+export const makeICQChannelAddress = (
+  controllerConnectionId,
+  { version = 'icq-1' } = {},
+) => {
+  controllerConnectionId || Fail`controllerConnectionId is required`;
+  return `/ibc-hop/${controllerConnectionId}/ibc-port/icqhost/unordered/${version}`;
+};
+harden(makeICQChannelAddress);
 
 /**
  * Parse a chain address from a remote address string.

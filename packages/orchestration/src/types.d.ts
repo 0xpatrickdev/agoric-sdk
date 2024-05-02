@@ -19,6 +19,11 @@ import type {
 } from '@agoric/vats/tools/ibc-utils.js';
 import type { Port } from '@agoric/network';
 
+export type * from './service.js';
+export type * from './vat-orchestration.js';
+export type * from './exos/chainAccountKit.js';
+export type * from './exos/queryConnectionKit.js';
+
 /**
  * static declaration of known chain types will allow type support for
  * additional chain-specific operations like `liquidStake`
