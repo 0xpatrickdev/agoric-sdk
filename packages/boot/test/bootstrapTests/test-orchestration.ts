@@ -126,6 +126,17 @@ test.serial('stakeAtom - repl-style', async t => {
 
   const res = await EV(account).delegate('cosmosvaloper1test', atomAmount);
   t.is(res, 'Success', 'delegate returns Success');
+
+  const queryRes = await EV(account).queryBalance();
+  t.deepEqual(queryRes, { amount: '0', denom: 'uatom' });
+
+  const queryUnknownDenom =
+    await EV(account).queryBalance('some-invalid-denom');
+  t.deepEqual(
+    queryUnknownDenom,
+    { amount: '0', denom: 'some-invalid-denom' },
+    'queryBalance for unknown denom returns amount: 0',
+  );
 });
 
 test.serial('stakeAtom - smart wallet', async t => {

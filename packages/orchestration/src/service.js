@@ -8,7 +8,7 @@ import { V as E } from '@agoric/vat-data/vow.js';
 import { M } from '@endo/patterns';
 import { Shape as NetworkShape } from '@agoric/network';
 import { prepareChainAccountKit } from './exos/chainAccountKit.js';
-import { prepareQueryConnectionKit } from './exos/queryConnectionKit.js';
+import { prepareICQConnectionKit } from './exos/icqConnectionKit.js';
 import {
   makeICAChannelAddress,
   makeICQChannelAddress,
@@ -18,7 +18,7 @@ import {
  * @import { Zone } from '@agoric/base-zone';
  * @import { Port, PortAllocator } from '@agoric/network';
  * @import { IBCConnectionID } from '@agoric/vats';
- * @import { QueryConnection, ChainAccount } from './types.js';
+ * @import { ICQConnection, ChainAccount, ICQConnectionKit } from './types.js';
  */
 
 const { Fail, bare } = assert;
@@ -40,6 +40,10 @@ const { Fail, bare } = assert;
  */
 
 /**
+ * @typedef {MapStore<IBCConnectionID,ICQConnectionKit>} ICQConnectionStore
+ */
+
+/**
  * @template {keyof OrchestrationPowers} K
  * @param {PowerStore} powers
  * @param {K} name
@@ -53,22 +57,22 @@ export const OrchestrationI = M.interface('Orchestration', {
   makeAccount: M.callWhen(M.string(), M.string()).returns(
     M.remotable('ChainAccount'),
   ),
-  createQueryConnection: M.callWhen(M.string()).returns(
+  provideICQConnection: M.callWhen(M.string()).returns(
     M.remotable('Connection'),
   ),
 });
 
-/** @typedef {{ powers: PowerStore; queryPort: Port | undefined; } } OrchestrationState */
+/** @typedef {{ powers: PowerStore; icqConnections: ICQConnectionStore } } OrchestrationState */
 
 /**
  * @param {Zone} zone
  * @param {ReturnType<prepareChainAccountKit>} makeChainAccountKit
- * @param {ReturnType<prepareQueryConnectionKit>} makeQueryConnectionKit
+ * @param {ReturnType<prepareICQConnectionKit>} makeICQConnectionKit
  */
 const prepareOrchestrationKit = (
   zone,
   makeChainAccountKit,
-  makeQueryConnectionKit,
+  makeICQConnectionKit,
 ) =>
   zone.exoClassKit(
     'Orchestration',
@@ -92,7 +96,8 @@ const prepareOrchestrationKit = (
           powers.init(/** @type {keyof OrchestrationPowers} */ (name), power);
         }
       }
-      return { powers, queryPort: undefined };
+      const icqConnections = zone.detached().mapStore('ICQConnections');
+      return /** @type {OrchestrationState} */ ({ powers, icqConnections });
     },
     {
       self: {
@@ -128,27 +133,34 @@ const prepareOrchestrationKit = (
             chainAccountKit.connectionHandler,
           );
           // XXX if we fail, should we close the port (if it was created in this flow)?
-
           return chainAccountKit.account;
         },
         /**
          * @param {IBCConnectionID} controllerConnectionId
-         * @returns {Promise<QueryConnection>}
-         * TODO, move to `Chain` object?
+         * @returns {Promise<ICQConnection>}
          */
-        async createQueryConnection(controllerConnectionId) {
+        async provideICQConnection(controllerConnectionId) {
+          if (this.state.icqConnections.has(controllerConnectionId)) {
+            return this.state.icqConnections.get(controllerConnectionId)
+              .connection;
+          }
+          // allocate a new Port for every Connection
           const port = await this.facets.self.allocateICQControllerPort();
-
           const remoteConnAddr = makeICQChannelAddress(controllerConnectionId);
-          const queryConnection = makeQueryConnectionKit(port);
+          const icqConnectionKit = makeICQConnectionKit(port);
 
-          // await so we do not return a QueryConnection before it successfully instantiates
+          // await so we do not return/save a ICQConnection before it successfully instantiates
           await E(port).connect(
             remoteConnAddr,
-            queryConnection.connectionHandler,
+            icqConnectionKit.connectionHandler,
           );
 
-          return queryConnection.connection;
+          this.state.icqConnections.init(
+            controllerConnectionId,
+            icqConnectionKit,
+          );
+
+          return icqConnectionKit.connection;
         },
       },
     },
@@ -157,11 +169,11 @@ const prepareOrchestrationKit = (
 /** @param {Zone} zone */
 export const prepareOrchestrationTools = zone => {
   const makeChainAccountKit = prepareChainAccountKit(zone);
-  const makeQueryConnectionKit = prepareQueryConnectionKit(zone);
+  const makeICQConnectionKit = prepareICQConnectionKit(zone);
   const makeOrchestrationKit = prepareOrchestrationKit(
     zone,
     makeChainAccountKit,
-    makeQueryConnectionKit,
+    makeICQConnectionKit,
   );
 
   return harden({ makeOrchestrationKit });

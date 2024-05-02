@@ -11,15 +11,16 @@ import { prepareStakingAccountKit } from '../exos/stakingAccountKit.js';
 
 const trace = makeTracer('StakeAtom');
 /**
- * @import { OrchestrationService } from '../service.js'
  * @import { Baggage } from '@agoric/vat-data';
  * @import { IBCConnectionID } from '@agoric/vats';
+ * @import { ICQConnection, OrchestrationService } from '../types.js';
  */
 
 /**
  * @typedef {{
  *  hostConnectionId: IBCConnectionID;
  *  controllerConnectionId: IBCConnectionID;
+ *  bondDenom: string;
  * }} StakeAtomTerms
  */
 
@@ -30,12 +31,15 @@ const trace = makeTracer('StakeAtom');
  *  orchestration: OrchestrationService;
  *  storageNode: StorageNode;
  *  marshaller: Marshaller;
+ *  icqConnection: ICQConnection
  * }} privateArgs
  * @param {Baggage} baggage
  */
 export const start = async (zcf, privateArgs, baggage) => {
-  const { hostConnectionId, controllerConnectionId } = zcf.getTerms();
-  const { orchestration, marshaller, storageNode } = privateArgs;
+  // TODO #9063 this roughly matches what we'll get from Chain<C>.getChainInfo()
+  const { hostConnectionId, controllerConnectionId, bondDenom } =
+    zcf.getTerms();
+  const { orchestration, marshaller, storageNode, icqConnection } = privateArgs;
 
   const zone = makeDurableZone(baggage);
 
@@ -52,12 +56,14 @@ export const start = async (zcf, privateArgs, baggage) => {
       hostConnectionId,
       controllerConnectionId,
     );
-    const address = await E(account).getAddress();
-    trace('chain address', address);
+    const accountAddress = await E(account).getAddress();
+    trace('account address', accountAddress);
     const { holder, invitationMakers } = makeStakingAccountKit(
       account,
       storageNode,
-      address,
+      accountAddress,
+      icqConnection,
+      bondDenom,
     );
     return {
       publicSubscribers: holder.getPublicTopics(),

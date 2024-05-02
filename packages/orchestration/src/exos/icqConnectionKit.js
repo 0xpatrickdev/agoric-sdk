@@ -1,5 +1,5 @@
 // @ts-check
-/** @file QueryConnection Exo */
+/** @file ICQConnection Exo */
 import { NonNullish } from '@agoric/assert';
 import { makeTracer } from '@agoric/internal';
 import { V as E } from '@agoric/vat-data/vow.js';
@@ -17,24 +17,24 @@ import { ConnectionHandlerI } from '../typeGuards.js';
  */
 
 const { Fail } = assert;
-const trace = makeTracer('Orchestration:QueryConnection');
+const trace = makeTracer('Orchestration:ICQConnection');
 
-export const QueryMsgShape = M.splitRecord(
+export const ICQMsgShape = M.splitRecord(
   { path: M.string(), data: M.string() },
   { height: M.string(), prove: M.boolean() },
 );
 
-export const QueryConnectionI = M.interface('QueryConnection', {
+export const ICQConnectionI = M.interface('ICQConnection', {
   getLocalAddress: M.call().returns(M.string()),
   getRemoteAddress: M.call().returns(M.string()),
-  query: M.call(M.arrayOf(QueryMsgShape)).returns(M.promise()),
+  query: M.call(M.arrayOf(ICQMsgShape)).returns(M.promise()),
 });
 
 /** @param {Zone} zone */
-export const prepareQueryConnectionKit = zone =>
+export const prepareICQConnectionKit = zone =>
   zone.exoClassKit(
-    'QueryConnectionKit',
-    { connection: QueryConnectionI, connectionHandler: ConnectionHandlerI },
+    'ICQConnectionKit',
+    { connection: ICQConnectionI, connectionHandler: ConnectionHandlerI },
     /**
      * @param {Port} port
      */
@@ -106,5 +106,5 @@ export const prepareQueryConnectionKit = zone =>
     },
   );
 
-/** @typedef {ReturnType<ReturnType<typeof prepareQueryConnectionKit>>} QueryConnectionKit */
-/** @typedef {QueryConnectionKit['connection']} QueryConnection */
+/** @typedef {ReturnType<ReturnType<typeof prepareICQConnectionKit>>} ICQConnectionKit */
+/** @typedef {ICQConnectionKit['connection']} ICQConnection */

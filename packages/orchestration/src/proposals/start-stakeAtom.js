@@ -17,7 +17,7 @@ export const startStakeAtom = async (
       agoricNames,
       board,
       chainStorage,
-      orchestration,
+      orchestration: orchestrationP,
       startUpgradable,
     },
     installation: {
@@ -27,16 +27,25 @@ export const startStakeAtom = async (
       produce: { stakeAtom: produceInstance },
     },
   },
-  { options: { hostConnectionId, controllerConnectionId } },
+  { options: { hostConnectionId, controllerConnectionId, bondDenom } },
 ) => {
   const VSTORAGE_PATH = 'stakeAtom';
-  trace('startStakeAtom', { hostConnectionId, controllerConnectionId });
+  trace('startStakeAtom', {
+    hostConnectionId,
+    controllerConnectionId,
+    bondDenom,
+  });
   await null;
 
   const storageNode = await makeStorageNodeChild(chainStorage, VSTORAGE_PATH);
   const marshaller = await E(board).getPublishingMarshaller();
   const atomIssuer = await E(agoricNames).lookup('issuer', 'ATOM');
   trace('ATOM Issuer', atomIssuer);
+
+  const orchestration = await orchestrationP;
+  const icqConnection = await E(orchestration).provideICQConnection(
+    controllerConnectionId,
+  );
 
   /** @type {StartUpgradableOpts<StakeAtomSF>} */
   const startOpts = {
@@ -46,9 +55,11 @@ export const startStakeAtom = async (
     terms: {
       hostConnectionId,
       controllerConnectionId,
+      bondDenom,
     },
     privateArgs: {
-      orchestration: await orchestration,
+      orchestration,
+      icqConnection,
       storageNode,
       marshaller,
     },

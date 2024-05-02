@@ -12,7 +12,10 @@ import {
   MsgDelegateResponse,
 } from '@agoric/cosmic-proto/cosmos/staking/v1beta1/tx.js';
 import { RequestQuery } from '@agoric/cosmic-proto/tendermint/abci/types.js';
-import type { OrchestrationService } from '@agoric/orchestration';
+import type {
+  OrchestrationService,
+  ICQConnection,
+} from '@agoric/orchestration';
 import { decodeBase64 } from '@endo/base64';
 import { M, matches } from '@endo/patterns';
 import { makeWalletFactoryContext } from './walletFactory.ts';
@@ -198,12 +201,12 @@ test('Query connection can be created', async t => {
   type Powers = { orchestration: OrchestrationService };
   const contract = async ({ orchestration }: Powers) => {
     const connection =
-      await EV(orchestration).createQueryConnection('connection-0');
+      await EV(orchestration).provideICQConnection('connection-0');
     t.log('Query Connection', connection);
-    t.truthy(connection, 'createQueryConnection returns a connection');
+    t.truthy(connection, 'provideICQConnection returns a connection');
     t.truthy(
-      matches(connection, M.remotable('QueryConnection')),
-      'QueryConnection is a remotable',
+      matches(connection, M.remotable('ICQConnection')),
+      'ICQConnection is a remotable',
     );
   };
 
@@ -221,9 +224,9 @@ test('Query connection can send a query', async t => {
   } = t.context;
 
   type Powers = { orchestration: OrchestrationService };
-  const contract = async ({ orchestration }: { Powers }) => {
-    const queryConnection: QueryConnection =
-      await EV(orchestration).createQueryConnection('connection-0');
+  const contract = async ({ orchestration }: Powers) => {
+    const queryConnection: ICQConnection =
+      await EV(orchestration).provideICQConnection('connection-0');
 
     const [result] = await EV(queryConnection).query([balanceQuery]);
     t.is(result.code, 0);
@@ -266,4 +269,30 @@ test('Query connection can send a query', async t => {
       await EV.vat('bootstrap').consumeItem('orchestration');
     await contract({ orchestration });
   }
+});
+
+test('provideICQConnection is idempotent', async t => {
+  const {
+    runUtils: { EV },
+  } = t.context;
+  const orchestration: OrchestrationService =
+    await EV.vat('bootstrap').consumeItem('orchestration');
+
+  const queryConn0 =
+    await EV(orchestration).provideICQConnection('connection-0');
+  const queryConn1 =
+    await EV(orchestration).provideICQConnection('connection-1');
+  const queryConn02 =
+    await EV(orchestration).provideICQConnection('connection-0');
+
+  const [addr0, addr1, addr02] = await Promise.all([
+    EV(queryConn0).getRemoteAddress(),
+    EV(queryConn1).getRemoteAddress(),
+    EV(queryConn02).getRemoteAddress(),
+  ]);
+  t.is(addr0, addr02);
+  t.not(addr0, addr1);
+
+  const [result] = await EV(queryConn02).query([balanceQuery]);
+  t.is(result.code, 0, 'ICQConnectionKit from MapStore state can send queries');
 });
