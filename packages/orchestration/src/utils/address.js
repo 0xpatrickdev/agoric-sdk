@@ -17,7 +17,7 @@ import { Fail } from '@agoric/assert';
  * @param {string} [opts.version] - default is `ics27-1`
  * @returns {RemoteIbcAddress}
  */
-export const makeICAConnectionAddress = (
+export const makeICAChannelAddress = (
   hostConnectionId,
   controllerConnectionId,
   {
