@@ -6,6 +6,7 @@ import { M } from '@endo/patterns';
 import { pickFacet } from '@agoric/vat-data';
 import { VowShape } from '@agoric/vow';
 
+import { Fail } from '@endo/errors';
 import { chainFacadeMethods } from '../typeGuards.js';
 
 /**
@@ -106,6 +107,9 @@ const prepareLocalChainFacadeKit = (
             allVows([lcaP, heapVowE(lcaP).getAddress()]),
             this.facets.makeAccountWatcher,
           );
+        },
+        query() {
+          return asVow(() => Fail`not yet implemented`);
         },
         /** @type {HostOf<AgoricChainMethods['getVBankAssetInfo']>} */
         getVBankAssetInfo() {
