@@ -86,9 +86,6 @@ export const makeZoeTools = (
       );
       // if any of the deposits to LCA failed, unwind all the allocations
       if (settleDeposits.find(x => x.status === 'rejected')) {
-        console.debug(
-          'One or more deposits to LCA failed. Returning payment(s)...',
-        );
         const amounts = values(give);
         const errors = [];
         // withdraw the successfully deposited payments
@@ -138,13 +135,18 @@ export const makeZoeTools = (
       // if any of the withdrawals were rejected, unwind the successful ones
       if (settledWithdrawals.find(x => x.status === 'rejected')) {
         const returnPaymentVs = [];
+        const errors = [];
         for (const result of settledWithdrawals) {
           if (result.status === 'fulfilled') {
             returnPaymentVs.push(srcLocalAccount.deposit(result.value));
+          } else {
+            errors.push(result.reason);
           }
         }
         await when(allVows(returnPaymentVs));
-        throw Fail`One or more withdrawals failed. Returned all payments to the source local account.`;
+        throw Fail`One or more withdrawals failed. Returned all payments to the source local account. ${q(
+          errors,
+        )}`;
       }
       // successfully withdraw all payments for srcLocalAccount, deposit to recipientSeat
       const paymentsKwr = harden(
