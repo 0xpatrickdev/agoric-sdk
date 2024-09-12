@@ -5,7 +5,10 @@ import { E } from '@endo/far';
 import path from 'path';
 import { mustMatch } from '@endo/patterns';
 import { AmountMath, makeIssuerKit } from '@agoric/ertp';
-import { eventLoopIteration, inspectMapStore } from '@agoric/internal/src/testing-utils.js';
+import {
+  eventLoopIteration,
+  inspectMapStore,
+} from '@agoric/internal/src/testing-utils.js';
 import { SIMULATED_ERRORS } from '@agoric/vats/tools/fake-bridge.js';
 import { CosmosChainInfo, IBCConnectionInfo } from '../../src/cosmos-api.js';
 import { commonSetup } from '../supports.js';
