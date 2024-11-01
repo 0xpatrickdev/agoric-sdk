@@ -78,7 +78,6 @@ export const contract = async (
     chainHub.registerChain(chainName, fetchedChainInfo[chainName]);
   }
   for (const brand of values(zcf.getTerms().brands)) {
-    console.log('Brand', brand);
     const info = assets.find(a => a.brand === brand);
     if (info) {
       chainHub.registerAsset(info.denom, {
