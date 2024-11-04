@@ -828,9 +828,11 @@ export const prepareLocalOrchestrationAccountKit = (
         transfer(destination, amount, opts) {
           return asVow(() => {
             trace('Transferring funds from LCA over IBC');
+
             const denomAmount = coerceDenomAmount(chainHub, amount);
             const denomDetail = chainHub.getAsset(denomAmount.denom);
             if (!denomDetail) {
+              console.log('@@@@@@@@@@@@@', denomAmount);
               throw makeError(
                 `Unable to fetch denom detail for ${denomAmount.denom}`,
               );

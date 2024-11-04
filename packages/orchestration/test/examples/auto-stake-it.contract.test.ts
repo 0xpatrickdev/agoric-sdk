@@ -24,6 +24,7 @@ test('make accounts, register tap, return invitationMakers', async t => {
   const {
     bootstrap: { storage },
     commonPrivateArgs,
+    brands: { atom },
     mocks: { transferBridge },
     utils: { inspectLocalBridge, inspectDibcBridge, transmitTransferAck },
   } = await commonSetup(t);
@@ -36,7 +37,7 @@ test('make accounts, register tap, return invitationMakers', async t => {
   const storageNode = await E(storage.rootNode).makeChildNode(contractName);
   const autoAutoStakeItKit = await E(zoe).startInstance(
     installation,
-    undefined,
+    { Stable: atom.issuer },
     {},
     { ...commonPrivateArgs, storageNode },
   );

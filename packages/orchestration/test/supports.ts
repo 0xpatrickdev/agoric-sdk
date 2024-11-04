@@ -61,6 +61,7 @@ export const commonSetup = async (t: ExecutionContext<any>) => {
   const bld = withAmountUtils(makeIssuerKit('BLD'));
   const ist = withAmountUtils(makeIssuerKit('IST'));
   const usdc = withAmountUtils(makeIssuerKit('USDC'));
+  const atom = withAmountUtils(makeIssuerKit('ATOM'));
   const bankBridgeMessages = [] as any[];
   const { bankManager, pourPayment } = await makeFakeBankManagerKit({
     onToBridge: obj => bankBridgeMessages.push(obj),
@@ -72,6 +73,7 @@ export const commonSetup = async (t: ExecutionContext<any>) => {
     'Inter Stable Token',
     ist.issuerKit,
   );
+  await E(bankManager).addAsset('uatom', 'ATOM', 'ATOM', atom.issuerKit);
   await E(bankManager).addAsset(
     usdcOnAgoric,
     'USDC',
@@ -82,6 +84,7 @@ export const commonSetup = async (t: ExecutionContext<any>) => {
   // Use pourPayment() for IST.
   const { mint: _b, ...bldSansMint } = bld;
   const { mint: _i, ...istSansMint } = ist;
+  const { mint: _a, ...atomSansMint } = atom;
   const { mint: _u, ...usdcSansMint } = usdc;
   // XXX real bankManager does this. fake should too?
   // TODO https://github.com/Agoric/agoric-sdk/issues/9966
@@ -94,6 +97,17 @@ export const commonSetup = async (t: ExecutionContext<any>) => {
       issuerName: 'IST',
       denom: 'uist',
       proposedName: 'IST',
+      displayInfo: { IOU: true },
+    }),
+  );
+  await E(E(agoricNamesAdmin).lookupAdmin('vbankAsset')).update(
+    'uatom',
+    /** @type {AssetInfo} */ harden({
+      brand: atom.brand,
+      issuer: atom.issuer,
+      issuerName: 'ATOM',
+      denom: 'uatom',
+      proposedName: 'ATOM',
       displayInfo: { IOU: true },
     }),
   );
@@ -207,7 +221,7 @@ export const commonSetup = async (t: ExecutionContext<any>) => {
    * Does not work with `withOrchestration` contracts, as these have their own
    * ChainHub. Use `ChainHubAdmin` instead.
    */
-  const registerAgoricAssets = () => {
+  const registerAgoricBld = () => {
     if (!chainHub.getAsset('ubld')) {
       chainHub.registerChain('agoric', fetchedChainInfo.agoric);
       chainHub.registerAsset('ubld', {
@@ -215,14 +229,6 @@ export const commonSetup = async (t: ExecutionContext<any>) => {
         baseName: 'agoric',
         baseDenom: 'ubld',
         brand: bld.brand,
-      });
-    }
-    if (!chainHub.getAsset('uist')) {
-      chainHub.registerAsset('uist', {
-        chainName: 'agoric',
-        baseName: 'agoric',
-        baseDenom: 'uist',
-        brand: ist.brand,
       });
     }
   };
@@ -272,6 +278,7 @@ export const commonSetup = async (t: ExecutionContext<any>) => {
       bld: bldSansMint,
       ist: istSansMint,
       usdc: usdcSansMint,
+      atom: atomSansMint,
     },
     mocks: {
       ibcBridge,
@@ -297,7 +304,7 @@ export const commonSetup = async (t: ExecutionContext<any>) => {
       inspectLocalBridge: () => harden([...localBridgeMessages]),
       inspectDibcBridge: () => E(ibcBridge).inspectDibcBridge(),
       inspectBankBridge: () => harden([...bankBridgeMessages]),
-      registerAgoricAssets,
+      registerAgoricBld,
       registerUSDC,
       transmitTransferAck,
     },

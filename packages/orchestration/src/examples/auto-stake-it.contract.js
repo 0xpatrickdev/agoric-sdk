@@ -2,12 +2,16 @@ import {
   EmptyProposalShape,
   InvitationShape,
 } from '@agoric/zoe/src/typeGuards.js';
+import { E } from '@endo/far';
 import { M } from '@endo/patterns';
 import { prepareChainHubAdmin } from '../exos/chain-hub-admin.js';
 import { preparePortfolioHolder } from '../exos/portfolio-holder-kit.js';
 import { withOrchestration } from '../utils/start-helper.js';
 import { prepareStakingTap } from './auto-stake-it-tap-kit.js';
 import * as flows from './auto-stake-it.flows.js';
+import fetchedChainInfo from '../fetched-chain-info.js';
+
+const { values } = Object;
 
 /**
  * @import {Zone} from '@agoric/zone';
@@ -23,13 +27,13 @@ import * as flows from './auto-stake-it.flows.js';
  * @param {ZCF} zcf
  * @param {OrchestrationPowers & {
  *   marshaller: Marshaller;
- * }} _privateArgs
+ * }} privateArgs
  * @param {Zone} zone
  * @param {OrchestrationTools} tools
  */
 const contract = async (
   zcf,
-  _privateArgs,
+  privateArgs,
   zone,
   { chainHub, orchestrateAll, vowTools },
 ) => {
@@ -47,6 +51,32 @@ const contract = async (
     makePortfolioHolder,
     chainHub,
   });
+
+  // register assets in ChainHub ourselves,
+  // UNTIL https://github.com/Agoric/agoric-sdk/issues/9752
+  const assets =
+    /** @type {import('@agoric/vats/src/vat-bank.js').AssetInfo[]} */ (
+      await E(E(privateArgs.agoricNames).lookup('vbankAsset')).values()
+    );
+  for (const chainName of ['agoric', 'cosmoshub']) {
+    chainHub.registerChain(chainName, fetchedChainInfo[chainName]);
+  }
+  console.log('@@@@@@@@@brand', assets);
+
+  for (const brand of values(zcf.getTerms().brands)) {
+    console.log('@@@@@@@@@brand', brand);
+    const info = assets.find(a => a.brand === brand);
+    if (info) {
+      chainHub.registerAsset(info.denom, {
+        // we are only registering agoric assets, so safe to use denom and
+        // hardcode chainName
+        baseDenom: info.denom,
+        baseName: 'agoric',
+        chainName: 'agoric',
+        brand,
+      });
+    }
+  }
 
   const publicFacet = zone.exo(
     'AutoStakeIt Public Facet',
