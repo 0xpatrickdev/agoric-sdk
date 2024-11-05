@@ -216,6 +216,18 @@ test('send using arbitrary chain info', async t => {
     { ...commonPrivateArgs, storageNode },
   );
 
+  await registerKnownChainsAndAssets(
+    {
+      agoricNamesAdmin: bootstrap.agoricNamesAdmin,
+      vowTools: bootstrap.vowTools,
+      chainHubAdmin: orchKit.creatorFacet,
+    },
+    fetchedChainInfo,
+    {
+      IST: ist.brand,
+    },
+  );
+
   t.log('client can send to hot chain without admin action');
   {
     const anAmt = ist.units(4.25);
