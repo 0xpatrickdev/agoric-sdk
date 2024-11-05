@@ -29,6 +29,7 @@ import { buildVTransferEvent } from '../tools/ibc-mocks.js';
 import { makeChainHub } from '../src/exos/chain-hub.js';
 import fetchedChainInfo from '../src/fetched-chain-info.js';
 import { denomHash } from '../src/utils/denomHash.js';
+import { registerKnownChainsAndAssets } from '../src/utils/chain-hub-helper.js';
 
 export {
   makeFakeLocalchainBridge,
@@ -221,7 +222,7 @@ export const commonSetup = async (t: ExecutionContext<any>) => {
    * Does not work with `withOrchestration` contracts, as these have their own
    * ChainHub. Use `ChainHubAdmin` instead.
    */
-  const registerAgoricBld = () => {
+  const registerAgoricAssets = () => {
     if (!chainHub.getAsset('ubld')) {
       chainHub.registerChain('agoric', fetchedChainInfo.agoric);
       chainHub.registerAsset('ubld', {
@@ -229,6 +230,14 @@ export const commonSetup = async (t: ExecutionContext<any>) => {
         baseName: 'agoric',
         baseDenom: 'ubld',
         brand: bld.brand,
+      });
+    }
+    if (!chainHub.getAsset('uist')) {
+      chainHub.registerAsset('uist', {
+        chainName: 'agoric',
+        baseName: 'agoric',
+        baseDenom: 'uist',
+        brand: ist.brand,
       });
     }
   };
@@ -304,9 +313,10 @@ export const commonSetup = async (t: ExecutionContext<any>) => {
       inspectLocalBridge: () => harden([...localBridgeMessages]),
       inspectDibcBridge: () => E(ibcBridge).inspectDibcBridge(),
       inspectBankBridge: () => harden([...bankBridgeMessages]),
-      registerAgoricBld,
+      registerAgoricAssets,
       registerUSDC,
       transmitTransferAck,
+      registerKnownChainsAndAssets,
     },
   };
 };

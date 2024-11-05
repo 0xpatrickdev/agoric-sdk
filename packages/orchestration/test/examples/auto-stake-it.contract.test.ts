@@ -11,6 +11,8 @@ import {
   buildMsgResponseString,
   buildVTransferEvent,
 } from '../../tools/ibc-mocks.js';
+import { denomHash } from '../../src/utils/denomHash.js';
+import fetchedChainInfo from '../../src/fetched-chain-info.js';
 
 const dirname = path.dirname(new URL(import.meta.url).pathname);
 
@@ -42,6 +44,29 @@ test('make accounts, register tap, return invitationMakers', async t => {
     { ...commonPrivateArgs, storageNode },
   );
   const publicFacet = await E(zoe).getPublicFacet(autoAutoStakeItKit.instance);
+
+  const atomOnAgoric = `ibc/${denomHash({
+    channelId:
+      fetchedChainInfo.agoric.connections['cosmoshub-4'].transferChannel
+        .channelId,
+    denom: 'uatom',
+  })}`;
+
+  for (const chainName of ['agoric', 'cosmoshub']) {
+    await E(autoAutoStakeItKit.creatorFacet).registerChain(
+      chainName,
+      fetchedChainInfo[chainName],
+    );
+  }
+
+  await E(autoAutoStakeItKit.creatorFacet).registerAsset(atomOnAgoric, {
+    // we are only registering agoric assets, so safe to use denom and
+    // hardcode chainName
+    baseDenom: 'uatom',
+    baseName: 'agoric',
+    chainName: 'agoric',
+    brand: atom.brand,
+  });
 
   // make an offer to create an LocalOrchAcct and a CosmosOrchAccount
   const inv = E(publicFacet).makeAccountsInvitation();

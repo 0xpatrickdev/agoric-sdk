@@ -1,5 +1,9 @@
 import { E } from '@endo/far';
+import { makeTracer } from '@agoric/internal';
 import { denomHash } from './denomHash.js';
+import { registerChain } from '../chain-info.js';
+
+const trace = makeTracer('ChainHubHelper', true);
 
 /**
  * @import {ERef} from '@endo/far';
@@ -10,24 +14,36 @@ import { denomHash } from './denomHash.js';
 /**
  * Consider this a sloppy hack until #9752
  *
- * @param {ERef<ChainHubAdmin>} chainHubAdmin
+ * @param {{
+ *   agoricNamesAdmin: ERef<import('@agoric/vats').NameAdmin>;
+ *   vowTools: import('@agoric/vow').VowTools;
+ *   chainHubAdmin: ERef<ChainHubAdmin>;
+ * }} powers
  * @param {KnownChains} chainInfo
+ * @param chainHubAdmin
  * @param {Record<string, Brand<'nat'>>} brands
  */
 export const registerKnownChainsAndAssets = async (
-  chainHubAdmin,
+  { agoricNamesAdmin, vowTools, chainHubAdmin },
   chainInfo,
   brands,
 ) => {
-  await Promise.all([
-    // multichain-e2e flows
-    E(chainHubAdmin).populateChainsAndConnection('agoric', 'cosmoshub'),
-    E(chainHubAdmin).populateChainsAndConnection('agoric', 'osmosis'),
-    E(chainHubAdmin).populateChainsAndConnection('cosmoshub', 'osmosis'),
-    // FastUSDC
-    E(chainHubAdmin).populateChainsAndConnection('agoric', 'noble'),
-    E(chainHubAdmin).populateChainsAndConnection('dydx', 'noble'),
-  ]);
+  // Register the names
+  for await (const [name, info] of Object.entries(chainInfo)) {
+    await registerChain(agoricNamesAdmin, name, info, trace);
+  }
+
+  await vowTools.when(
+    vowTools.all([
+      // multichain-e2e flows
+      E(chainHubAdmin).populateChainsAndConnection('agoric', 'cosmoshub'),
+      E(chainHubAdmin).populateChainsAndConnection('agoric', 'osmosis'),
+      E(chainHubAdmin).populateChainsAndConnection('cosmoshub', 'osmosis'),
+      // FastUSDC
+      E(chainHubAdmin).populateChainsAndConnection('agoric', 'noble'),
+      E(chainHubAdmin).populateChainsAndConnection('dydx', 'noble'),
+    ]),
+  );
 
   await Promise.all([
     // agoric

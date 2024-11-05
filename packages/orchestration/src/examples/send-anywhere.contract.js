@@ -68,30 +68,6 @@ export const contract = async (
     zoeTools,
   });
 
-  // register assets in ChainHub ourselves,
-  // UNTIL https://github.com/Agoric/agoric-sdk/issues/9752
-  const assets =
-    /** @type {import('@agoric/vats/src/vat-bank.js').AssetInfo[]} */ (
-      await E(E(privateArgs.agoricNames).lookup('vbankAsset')).values()
-    );
-  for (const chainName of ['agoric', 'cosmoshub']) {
-    chainHub.registerChain(chainName, fetchedChainInfo[chainName]);
-  }
-  for (const brand of values(zcf.getTerms().brands)) {
-    console.log('@@@@@@@@@brand', brand);
-    const info = assets.find(a => a.brand === brand);
-    if (info) {
-      chainHub.registerAsset(info.denom, {
-        // we are only registering agoric assets, so safe to use denom and
-        // hardcode chainName
-        baseDenom: info.denom,
-        baseName: 'agoric',
-        chainName: 'agoric',
-        brand,
-      });
-    }
-  }
-
   const publicFacet = zone.exo(
     'Send PF',
     M.interface('Send PF', {
