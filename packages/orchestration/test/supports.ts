@@ -232,14 +232,6 @@ export const commonSetup = async (t: ExecutionContext<any>) => {
         brand: bld.brand,
       });
     }
-    if (!chainHub.getAsset('uist')) {
-      chainHub.registerAsset('uist', {
-        chainName: 'agoric',
-        baseName: 'agoric',
-        baseDenom: 'uist',
-        brand: ist.brand,
-      });
-    }
   };
 
   const registerUSDC = () => {
