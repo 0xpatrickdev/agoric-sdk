@@ -15,7 +15,7 @@ const trace = makeTracer('ChainHubHelper', true);
  * Consider this a sloppy hack until #9752
  *
  * @param {{
- *   agoricNamesAdmin: ERef<import('@agoric/vats').NameAdmin>;
+ *   agoricNamesAdmin?: ERef<import('@agoric/vats').NameAdmin>?;
  *   vowTools: import('@agoric/vow').VowTools;
  *   chainHubAdmin: ERef<ChainHubAdmin>;
  * }} powers
@@ -28,9 +28,12 @@ export const registerKnownChainsAndAssets = async (
   chainInfo,
   brands,
 ) => {
-  // Register the names
-  for await (const [name, info] of Object.entries(chainInfo)) {
-    await registerChain(agoricNamesAdmin, name, info, trace);
+  if (agoricNamesAdmin != null) {
+    // Register the names
+    // eslint-disable-next-line @jessie.js/safe-await-separator
+    for await (const [name, info] of Object.entries(chainInfo)) {
+      await registerChain(agoricNamesAdmin, name, info, trace);
+    }
   }
 
   await vowTools.when(

@@ -76,20 +76,15 @@ export const startSendAnywhere = async ({
     }),
   );
 
-  const { instance, creatorFacet } = await E(startUpgradable)({
+  const { instance } = await E(startUpgradable)({
     label: 'send-anywhere',
     installation: sendAnywhere,
-    issuerKeywordRecord: { Stable: await IST },
+    issuerKeywordRecord: { Stable: await IST, Test: await BLD },
     privateArgs,
   });
   produceInstance.resolve(instance);
   trace('contract started');
 
-  await registerKnownChainsAndAssets(creatorFacet, fetchedChainInfo, {
-    BLD,
-    IST,
-    USDC,
-  });
   trace('done');
 };
 harden(startSendAnywhere);

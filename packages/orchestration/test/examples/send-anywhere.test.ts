@@ -67,12 +67,7 @@ test('send using arbitrary chain info', async t => {
     bootstrap,
     commonPrivateArgs,
     brands: { ist },
-    utils: {
-      inspectLocalBridge,
-      pourPayment,
-      transmitTransferAck,
-      registerKnownChainsAndAssets,
-    },
+    utils: { inspectLocalBridge, pourPayment, transmitTransferAck },
   } = await commonSetup(t);
   const vt = bootstrap.vowTools;
 
@@ -91,18 +86,6 @@ test('send using arbitrary chain info', async t => {
     { Stable: ist.issuer },
     {},
     { ...commonPrivateArgs, storageNode },
-  );
-
-  await registerKnownChainsAndAssets(
-    {
-      agoricNamesAdmin: bootstrap.agoricNamesAdmin,
-      vowTools: bootstrap.vowTools,
-      chainHubAdmin: sendKit.creatorFacet,
-    },
-    fetchedChainInfo,
-    {
-      IST: ist.brand,
-    },
   );
 
   const hotChainInfo = harden({
@@ -216,18 +199,6 @@ test('send using arbitrary chain info', async t => {
     { ...commonPrivateArgs, storageNode },
   );
 
-  await registerKnownChainsAndAssets(
-    {
-      agoricNamesAdmin: bootstrap.agoricNamesAdmin,
-      vowTools: bootstrap.vowTools,
-      chainHubAdmin: orchKit.creatorFacet,
-    },
-    fetchedChainInfo,
-    {
-      IST: ist.brand,
-    },
-  );
-
   t.log('client can send to hot chain without admin action');
   {
     const anAmt = ist.units(4.25);
@@ -288,12 +259,7 @@ test('failed ibc transfer returns give', async t => {
     bootstrap,
     commonPrivateArgs,
     brands: { ist },
-    utils: {
-      inspectLocalBridge,
-      pourPayment,
-      inspectBankBridge,
-      registerKnownChainsAndAssets,
-    },
+    utils: { inspectLocalBridge, pourPayment, inspectBankBridge },
   } = await commonSetup(t);
   const vt = bootstrap.vowTools;
 
@@ -312,18 +278,6 @@ test('failed ibc transfer returns give', async t => {
     { Stable: ist.issuer },
     {},
     { ...commonPrivateArgs, storageNode },
-  );
-
-  await registerKnownChainsAndAssets(
-    {
-      agoricNamesAdmin: bootstrap.agoricNamesAdmin,
-      vowTools: bootstrap.vowTools,
-      chainHubAdmin: sendKit.creatorFacet,
-    },
-    fetchedChainInfo,
-    {
-      IST: ist.brand,
-    },
   );
 
   t.log('client sends an ibc transfer we expect will timeout');
@@ -447,7 +401,7 @@ test('rejects multi-asset send', async t => {
     bootstrap,
     commonPrivateArgs,
     brands: { ist, bld },
-    utils: { pourPayment, registerKnownChainsAndAssets },
+    utils: { pourPayment },
   } = await commonSetup(t);
   const vt = bootstrap.vowTools;
 
@@ -463,18 +417,6 @@ test('rejects multi-asset send', async t => {
     { BLD: bld.issuer, IST: ist.issuer },
     {},
     { ...commonPrivateArgs, storageNode },
-  );
-
-  await registerKnownChainsAndAssets(
-    {
-      agoricNamesAdmin: bootstrap.agoricNamesAdmin,
-      vowTools: bootstrap.vowTools,
-      chainHubAdmin: sendKit.creatorFacet,
-    },
-    fetchedChainInfo,
-    {
-      IST: ist.brand,
-    },
   );
 
   const publicFacet = await E(zoe).getPublicFacet(sendKit.instance);
