@@ -7,8 +7,6 @@ import {
   makeTracer,
   NonNullish,
 } from '@agoric/internal';
-import { registerKnownChainsAndAssets } from '@agoric/orchestration';
-import fetchedChainInfo from '@agoric/orchestration/src/fetched-chain-info';
 import { E } from '@endo/far';
 
 /// <reference types="@agoric/vats/src/core/types-ambient"/>

@@ -7,8 +7,7 @@ import { AnyNatAmountShape } from '../typeGuards.js';
 import { withOrchestration } from '../utils/start-helper.js';
 import * as flows from './send-anywhere.flows.js';
 import * as sharedFlows from './shared.flows.js';
-
-const { values } = Object;
+import { registerKnownChainsAndAssets } from '../utils/chain-hub-helper.js';
 
 /**
  * @import {Vow} from '@agoric/vow';
@@ -74,22 +73,22 @@ export const contract = async (
     /** @type {import('@agoric/vats/src/vat-bank.js').AssetInfo[]} */ (
       await E(E(privateArgs.agoricNames).lookup('vbankAsset')).values()
     );
-  for (const chainName of ['agoric', 'cosmoshub']) {
-    chainHub.registerChain(chainName, fetchedChainInfo[chainName]);
+
+  /** @type {Record<string, Brand<'nat'>>} */
+  const brands = {};
+
+  for (const asset of assets) {
+    brands[asset.issuerName] = /** @type {Brand<'nat'>} */ (asset.brand);
   }
-  for (const brand of values(zcf.getTerms().brands)) {
-    const info = assets.find(a => a.brand === brand);
-    if (info) {
-      chainHub.registerAsset(info.denom, {
-        // we are only registering agoric assets, so safe to use denom and
-        // hardcode chainName
-        baseDenom: info.denom,
-        baseName: 'agoric',
-        chainName: 'agoric',
-        brand,
-      });
-    }
-  }
+
+  // await registerKnownChainsAndAssets(
+  //   {
+  //     vowTools,
+  //     chainHubAdmin: creatorFacet,
+  //   },
+  //   fetchedChainInfo,
+  //   brands,
+  // );
 
   const publicFacet = zone.exo(
     'Send PF',
