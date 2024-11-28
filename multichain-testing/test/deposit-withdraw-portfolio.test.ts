@@ -1,9 +1,11 @@
 import anyTest from '@endo/ses-ava/prepare-endo.js';
 import type { TestFn } from 'ava';
 import { AmountMath } from '@agoric/ertp';
+import { withChainCapabilities } from '@agoric/orchestration';
 import { makeDoOffer } from '../tools/e2e-tools.js';
 import { makeQueryClient } from '../tools/query.js';
 import { commonSetup, type SetupContextWithWallets } from './support.js';
+import starshipChainInfo from '../starship-chain-info.js';
 
 const test = anyTest as TestFn<SetupContextWithWallets>;
 
@@ -14,12 +16,15 @@ const contractBuilder =
   '../packages/builders/scripts/orchestration/init-basic-flows.js';
 
 test.before(async t => {
-  const { deleteTestKeys, setupTestKeys, ...rest } = await commonSetup(t);
+  const { setupTestKeys, ...common } = await commonSetup(t);
+  const { assetInfo, deleteTestKeys, startContract } = common;
   deleteTestKeys(accounts).catch();
   const wallets = await setupTestKeys(accounts);
-  t.context = { ...rest, wallets, deleteTestKeys };
-  const { startContract } = rest;
-  await startContract(contractName, contractBuilder);
+  t.context = { ...common, wallets };
+  await startContract(contractName, contractBuilder, {
+    chainInfo: JSON.stringify(withChainCapabilities(starshipChainInfo)),
+    assetInfo: JSON.stringify(assetInfo),
+  });
 });
 
 test.after(async t => {
