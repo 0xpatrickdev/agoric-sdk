@@ -15,7 +15,7 @@ import { makeRetryUntilCondition } from '../tools/sleep.js';
 import { makeDeployBuilder } from '../tools/deploy.js';
 import { makeHermes } from '../tools/hermes-tools.js';
 import { makeNobleTools } from '../tools/noble-tools.js';
-import { denomHash, type DenomDetail } from '@agoric/orchestration';
+import { makeAssetInfo } from '../tools/asset-info.js';
 import starshipChainInfo from '../starship-chain-info.js';
 
 export const FAUCET_POUR = 10_000n * 1_000_000n;
@@ -80,32 +80,7 @@ export const commonSetup = async (t: ExecutionContext) => {
   });
   const hermes = makeHermes(childProcess);
   const nobleTools = makeNobleTools(childProcess);
-
-  // common assetInfo for contract chainHub
-  const commonAssetInfo: Record<string, DenomDetail> = {
-    uosmo: {
-      baseName: 'osmosis',
-      chainName: 'osmosis',
-      baseDenom: 'uosmo',
-    },
-    [`ibc/${denomHash({ denom: 'uosmo', channelId: starshipChainInfo.agoric.connections['osmosislocal'].transferChannel.channelId })}`]:
-      {
-        baseName: 'osmosis',
-        chainName: 'agoric',
-        baseDenom: 'uosmo',
-      },
-    uatom: {
-      baseName: 'cosmoshub',
-      chainName: 'cosmoshub',
-      baseDenom: 'uatom',
-    },
-    [`ibc/${denomHash({ denom: 'uatom', channelId: starshipChainInfo.agoric.connections['gaialocal'].transferChannel.channelId })}`]:
-      {
-        baseName: 'cosmoshub',
-        chainName: 'agoric',
-        baseDenom: 'uatom',
-      },
-  };
+  const assetInfo = makeAssetInfo(starshipChainInfo);
 
   /**
    * Starts a contract if instance not found. Takes care of installing
@@ -144,7 +119,7 @@ export const commonSetup = async (t: ExecutionContext) => {
     hermes,
     nobleTools,
     startContract,
-    commonAssetInfo,
+    assetInfo,
   };
 };
 

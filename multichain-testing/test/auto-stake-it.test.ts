@@ -25,13 +25,13 @@ const contractBuilder =
 
 test.before(async t => {
   const { setupTestKeys, ...common } = await commonSetup(t);
-  const { commonAssetInfo, deleteTestKeys, startContract } = common;
+  const { assetInfo, deleteTestKeys, startContract } = common;
   deleteTestKeys(accounts).catch();
   const wallets = await setupTestKeys(accounts);
   t.context = { ...common, wallets };
   await startContract(contractName, contractBuilder, {
     chainInfo: JSON.stringify(withChainCapabilities(starshipChainInfo)),
-    assetInfo: JSON.stringify(commonAssetInfo),
+    assetInfo: JSON.stringify(assetInfo),
   });
 });
 
